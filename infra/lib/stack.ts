@@ -65,7 +65,7 @@ export class LSPTicketHiveStack extends cdk.Stack {
       bucketName: `lsp-tickethive-images-${this.account}`,
       cors: [{
         allowedOrigins: ["*"],
-        allowedMethods: [s3.HttpMethod.GET, s3.HttpMethod.PUT],
+        allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT],
         allowedHeaders: ["*"],
       }],
       publicReadAccess: true,
