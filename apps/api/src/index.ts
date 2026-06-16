@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import { authRouter } from "./routes/auth";
 import { eventsRouter } from "./routes/events";
@@ -15,7 +16,8 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
-app.use(cors({ origin: [process.env.FRONTEND_URL || "http://localhost:3000", "https://lsptickethive.com", "https://www.lsptickethive.com", "http://34.253.167.18", "http://34.253.167.18:3000"] }));
+app.use(cors({ origin: [process.env.FRONTEND_URL || "http://localhost:3000", "https://lsptickethive.com", "https://www.lsptickethive.com", "http://34.253.167.18", "http://34.253.167.18:3000"], credentials: true }));
+app.use(cookieParser());
 app.use(morgan("combined"));
 
 app.use("/api/webhooks", webhooksRouter);

@@ -6,6 +6,14 @@ import { z } from "zod";
 
 export const authRouter = Router();
 
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production" || process.env.FRONTEND_URL?.startsWith("https"),
+  sameSite: "lax" as const,
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  path: "/",
+};
+
 const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
@@ -41,6 +49,7 @@ authRouter.post("/register", async (req, res) => {
 
     const token = signToken({ userId: user.id, email: user.email, role: user.role });
 
+    res.cookie("token", token, COOKIE_OPTIONS);
     res.status(201).json({
       success: true,
       data: {
@@ -72,6 +81,7 @@ authRouter.post("/login", async (req, res) => {
 
     const token = signToken({ userId: user.id, email: user.email, role: user.role });
 
+    res.cookie("token", token, COOKIE_OPTIONS);
     res.json({
       success: true,
       data: {
@@ -85,6 +95,11 @@ authRouter.post("/login", async (req, res) => {
     }
     res.status(500).json({ success: false, error: "Internal server error" });
   }
+});
+
+authRouter.post("/logout", (_req, res) => {
+  res.clearCookie("token", { path: "/" });
+  res.json({ success: true });
 });
 
 authRouter.get("/me", authenticate, async (req: AuthRequest, res) => {
