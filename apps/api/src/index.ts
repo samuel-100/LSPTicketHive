@@ -11,6 +11,8 @@ import { organizationsRouter } from "./routes/organizations";
 import { checkInRouter } from "./routes/checkin";
 import { uploadRouter } from "./routes/upload";
 import { followRouter } from "./routes/follow";
+import { oauthRouter } from "./routes/oauth";
+import passport from "passport";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -31,6 +33,8 @@ app.use("/api/organizations", organizationsRouter);
 app.use("/api/checkin", checkInRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/follow", followRouter);
+app.use(passport.initialize());
+app.use("/api/auth", oauthRouter);
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
