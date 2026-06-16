@@ -91,13 +91,15 @@ export default function LoginPage() {
               <GoogleIcon />
               Continue with Google
             </button>
-            <button type="button" onClick={() => window.location.href = `${API_URL}/api/auth/apple`} className="w-full flex items-center justify-center gap-3 bg-white/5 border border-white/10 py-3.5 rounded-xl text-white font-medium hover:bg-white/10 transition-colors">
+            <button type="button" className="w-full flex items-center justify-center gap-3 bg-white/5 border border-white/10 py-3.5 rounded-xl text-white/40 font-medium cursor-not-allowed">
               <AppleIcon />
               Continue with Apple
+              <span className="text-xs text-white/20 ml-1">Soon</span>
             </button>
-            <button type="button" onClick={() => window.location.href = `${API_URL}/api/auth/facebook`} className="w-full flex items-center justify-center gap-3 bg-white/5 border border-white/10 py-3.5 rounded-xl text-white font-medium hover:bg-white/10 transition-colors">
+            <button type="button" className="w-full flex items-center justify-center gap-3 bg-white/5 border border-white/10 py-3.5 rounded-xl text-white/40 font-medium cursor-not-allowed">
               <FacebookIcon />
               Continue with Facebook
+              <span className="text-xs text-white/20 ml-1">Soon</span>
             </button>
           </div>
 
