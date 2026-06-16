@@ -67,6 +67,12 @@ oauthRouter.get("/google/callback",
       id: user.userId, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role
     }));
 
-    res.redirect(`${FRONTEND_URL}/auth/callback?user=${userJson}`);
+    // Instant redirect with inline script to set localStorage and go to events
+    res.send(`
+      <html><body><script>
+        localStorage.setItem("user", decodeURIComponent("${userJson}"));
+        window.location.href = "${FRONTEND_URL}/events";
+      </script></body></html>
+    `);
   }
 );
