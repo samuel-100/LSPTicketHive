@@ -1,132 +1,114 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
-import { useRef, useMemo, useEffect } from "react";
-import * as THREE from "three";
+import { useEffect, useRef } from "react";
 
-function ParticleMesh() {
-  const pointsRef = useRef<THREE.Points>(null);
-  const linesRef = useRef<THREE.LineSegments>(null);
-
-  const count = 100;
-  const connectionDistance = 2.8;
-
-  const { positions, velocities } = useMemo(() => {
-    const pos = new Float32Array(count * 3);
-    const vel = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 10;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 8;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 5;
-      vel[i * 3] = (Math.random() - 0.5) * 0.004;
-      vel[i * 3 + 1] = (Math.random() - 0.5) * 0.004;
-      vel[i * 3 + 2] = (Math.random() - 0.5) * 0.002;
-    }
-    return { positions: pos, velocities: vel };
-  }, []);
-
-  useEffect(() => {
-    if (!pointsRef.current) return;
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    pointsRef.current.geometry = geometry;
-  }, [positions]);
-
-  useEffect(() => {
-    if (!linesRef.current) return;
-    linesRef.current.geometry = new THREE.BufferGeometry();
-  }, []);
-
-  useFrame(() => {
-    if (!pointsRef.current || !linesRef.current) return;
-
-    const posAttr = pointsRef.current.geometry.attributes.position;
-    if (!posAttr) return;
-    const pos = posAttr.array as Float32Array;
-
-    for (let i = 0; i < count; i++) {
-      pos[i * 3] += velocities[i * 3];
-      pos[i * 3 + 1] += velocities[i * 3 + 1];
-      pos[i * 3 + 2] += velocities[i * 3 + 2];
-
-      if (Math.abs(pos[i * 3]) > 5) velocities[i * 3] *= -1;
-      if (Math.abs(pos[i * 3 + 1]) > 4) velocities[i * 3 + 1] *= -1;
-      if (Math.abs(pos[i * 3 + 2]) > 2.5) velocities[i * 3 + 2] *= -1;
-    }
-    posAttr.needsUpdate = true;
-
-    const linePos: number[] = [];
-    for (let i = 0; i < count; i++) {
-      for (let j = i + 1; j < count; j++) {
-        const dx = pos[i * 3] - pos[j * 3];
-        const dy = pos[i * 3 + 1] - pos[j * 3 + 1];
-        const dz = pos[i * 3 + 2] - pos[j * 3 + 2];
-        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        if (dist < connectionDistance) {
-          linePos.push(
-            pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2],
-            pos[j * 3], pos[j * 3 + 1], pos[j * 3 + 2]
-          );
-        }
-      }
-    }
-
-    const lineGeom = new THREE.BufferGeometry();
-    if (linePos.length > 0) {
-      lineGeom.setAttribute("position", new THREE.Float32BufferAttribute(linePos, 3));
-    }
-    linesRef.current.geometry.dispose();
-    linesRef.current.geometry = lineGeom;
-
-    pointsRef.current.rotation.y += 0.0002;
-    linesRef.current.rotation.y += 0.0002;
-  });
-
-  return (
-    <>
-      <points ref={pointsRef}>
-        <bufferGeometry />
-        <pointsMaterial size={0.05} color="#22c55e" transparent opacity={0.9} sizeAttenuation />
-      </points>
-      <lineSegments ref={linesRef}>
-        <bufferGeometry />
-        <lineBasicMaterial color="#22c55e" transparent opacity={0.1} />
-      </lineSegments>
-    </>
-  );
-}
-
-function FloatingOrb() {
-  const ref = useRef<THREE.Mesh>(null);
-
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-    ref.current.position.y = Math.sin(clock.getElapsedTime() * 0.4) * 0.4;
-    ref.current.rotation.x = clock.getElapsedTime() * 0.15;
-    ref.current.rotation.z = clock.getElapsedTime() * 0.08;
-  });
-
-  return (
-    <mesh ref={ref} position={[0, 0, -1]}>
-      <icosahedronGeometry args={[2, 1]} />
-      <meshBasicMaterial color="#22c55e" wireframe transparent opacity={0.06} />
-    </mesh>
-  );
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
 }
 
 export default function HeroScene() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animationId: number;
+    let particles: Particle[] = [];
+    const connectionDistance = 120;
+    const particleCount = 80;
+
+    function resize() {
+      if (!canvas) return;
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      ctx!.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+
+    function initParticles() {
+      particles = [];
+      for (let i = 0; i < particleCount; i++) {
+        particles.push({
+          x: Math.random() * canvas!.offsetWidth,
+          y: Math.random() * canvas!.offsetHeight,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5,
+        });
+      }
+    }
+
+    function animate() {
+      if (!canvas || !ctx) return;
+
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+
+      ctx.clearRect(0, 0, w, h);
+
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+      }
+
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < connectionDistance) {
+            const opacity = 1 - dist / connectionDistance;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(34, 197, 94, ${opacity * 0.15})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+
+      for (const p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(34, 197, 94, 0.6)";
+        ctx.fill();
+      }
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    resize();
+    initParticles();
+    animate();
+
+    window.addEventListener("resize", () => {
+      resize();
+      initParticles();
+    });
+
+    return () => {
+      cancelAnimationFrame(animationId);
+    };
+  }, []);
+
   return (
     <div className="absolute inset-0 z-0">
-      <Canvas
-        camera={{ position: [0, 0, 7], fov: 60 }}
-        dpr={[1, 1.5]}
-        gl={{ antialias: true, alpha: true }}
-        style={{ background: "transparent" }}
-      >
-        <ParticleMesh />
-        <FloatingOrb />
-      </Canvas>
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a]/30 via-transparent to-[#0a0a0a]" />
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full"
+        style={{ display: "block" }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a0a]/20 via-transparent to-[#0a0a0a]" />
     </div>
   );
 }
