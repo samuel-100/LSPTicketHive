@@ -68,7 +68,7 @@ ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
           platformFee: 0,
           processingFee: 0,
           total: 0,
-          status: "CONFIRMED",
+          status: "COMPLETED",
           userId: req.user!.userId,
           eventId: event.id,
         },
@@ -83,10 +83,8 @@ ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
           await prisma.ticket.create({
             data: {
               orderId: order.id,
-              eventId: event.id,
               ticketTypeId: item.ticketTypeId,
               userId: req.user!.userId,
-              qrCode: `TKT-${order.id}-${item.ticketTypeId}-${i}-${Date.now()}`,
             },
           });
         }
