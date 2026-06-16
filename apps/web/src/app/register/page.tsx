@@ -3,12 +3,13 @@
 import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Ticket } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export default function RegisterPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white/40">Loading...</div>}>
       <RegisterForm />
     </Suspense>
   );
@@ -57,57 +58,115 @@ function RegisterForm() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12">
-      <div className="bg-white p-8 rounded-xl shadow-sm border w-full max-w-md">
-        <Link href="/" className="text-2xl font-bold text-brand-600 block text-center mb-6">LSPTicketHive</Link>
-        <h2 className="text-xl font-semibold text-center mb-6">Create your account</h2>
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md">
+        <Link href="/" className="flex items-center justify-center gap-2 mb-8">
+          <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
+            <Ticket className="w-5 h-5 text-black" />
+          </div>
+          <span className="text-xl font-bold text-white">LSPTicketHive</span>
+        </Link>
 
-        {error && <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">{error}</div>}
+        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-8">
+          <h2 className="text-2xl font-bold text-white text-center mb-2">Create your account</h2>
+          <p className="text-white/40 text-center text-sm mb-8">Start discovering or selling event tickets</p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-              <input type="text" value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} required
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500" />
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl mb-6 text-sm">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-2">First Name</label>
+                <input
+                  type="text"
+                  value={form.firstName}
+                  onChange={e => setForm({ ...form, firstName: e.target.value })}
+                  required
+                  placeholder="John"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white/60 mb-2">Last Name</label>
+                <input
+                  type="text"
+                  value={form.lastName}
+                  onChange={e => setForm({ ...form, lastName: e.target.value })}
+                  required
+                  placeholder="Doe"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+                />
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-              <input type="text" value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} required
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500" />
+              <label className="block text-sm font-medium text-white/60 mb-2">Email</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                required
+                placeholder="you@example.com"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+              />
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required minLength={8}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">I want to...</label>
-            <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setForm({ ...form, role: "ATTENDEE" })}
-                className={`p-3 border rounded-lg text-sm font-medium ${form.role === "ATTENDEE" ? "border-brand-600 bg-brand-50 text-brand-700" : "text-gray-600"}`}>
-                Buy Tickets
-              </button>
-              <button type="button" onClick={() => setForm({ ...form, role: "ORGANIZER" })}
-                className={`p-3 border rounded-lg text-sm font-medium ${form.role === "ORGANIZER" ? "border-brand-600 bg-brand-50 text-brand-700" : "text-gray-600"}`}>
-                Sell Tickets
-              </button>
+            <div>
+              <label className="block text-sm font-medium text-white/60 mb-2">Password</label>
+              <input
+                type="password"
+                value={form.password}
+                onChange={e => setForm({ ...form, password: e.target.value })}
+                required
+                minLength={8}
+                placeholder="Min 8 characters"
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
+              />
             </div>
-          </div>
-          <button type="submit" disabled={loading}
-            className="w-full bg-brand-600 text-white py-3 rounded-lg font-semibold hover:bg-brand-700 disabled:opacity-50">
-            {loading ? "Creating account..." : "Create Account"}
-          </button>
-        </form>
+            <div>
+              <label className="block text-sm font-medium text-white/60 mb-2">I want to...</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, role: "ATTENDEE" })}
+                  className={`p-3.5 border rounded-xl text-sm font-medium transition-all ${
+                    form.role === "ATTENDEE"
+                      ? "border-brand-500 bg-brand-500/10 text-brand-400"
+                      : "border-white/10 text-white/40 hover:border-white/20"
+                  }`}
+                >
+                  Buy Tickets
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, role: "ORGANIZER" })}
+                  className={`p-3.5 border rounded-xl text-sm font-medium transition-all ${
+                    form.role === "ORGANIZER"
+                      ? "border-brand-500 bg-brand-500/10 text-brand-400"
+                      : "border-white/10 text-white/40 hover:border-white/20"
+                  }`}
+                >
+                  Sell Tickets
+                </button>
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-brand-500 text-black py-3.5 rounded-xl font-semibold hover:bg-brand-400 disabled:opacity-50 transition-colors"
+            >
+              {loading ? "Creating account..." : "Create Account"}
+            </button>
+          </form>
+        </div>
 
-        <p className="text-center text-gray-500 text-sm mt-4">
-          Already have an account? <Link href="/login" className="text-brand-600 hover:underline">Sign in</Link>
+        <p className="text-center text-white/30 text-sm mt-6">
+          Already have an account?{" "}
+          <Link href="/login" className="text-brand-400 hover:text-brand-300 transition-colors">
+            Sign in
+          </Link>
         </p>
       </div>
     </div>
