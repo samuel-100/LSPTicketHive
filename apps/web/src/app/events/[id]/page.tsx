@@ -65,6 +65,38 @@ export default function EventDetailPage() {
     return event.ticketTypes.reduce((sum, tt) => sum + (quantities[tt.id] || 0) * tt.price, 0);
   }
 
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  async function handleCheckout() {
+    setCheckoutLoading(true);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+
+    const items = Object.entries(quantities)
+      .filter(([, qty]) => qty > 0)
+      .map(([ticketTypeId, quantity]) => ({ ticketTypeId, quantity }));
+
+    try {
+      const res = await fetch(`${API_URL}/api/orders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ eventId: params.id, items }),
+      });
+      const data = await res.json();
+      if (data.data?.checkoutUrl) {
+        window.location.href = data.data.checkoutUrl;
+      } else {
+        alert(data.error || "Checkout failed");
+      }
+    } catch {
+      alert("Network error");
+    }
+    setCheckoutLoading(false);
+  }
+
   if (loading) return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white/30">Loading...</div>;
   if (!event) return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white/30">Event not found</div>;
 
@@ -198,8 +230,12 @@ export default function EventDetailPage() {
                     <span className="text-white/20">Platform fee (2%)</span>
                     <span className="text-white/40">€{(getTotal() * 0.02).toFixed(2)}</span>
                   </div>
-                  <button className="w-full bg-brand-500 text-black py-3.5 rounded-xl font-semibold hover:bg-brand-400 transition-colors">
-                    Checkout — €{(getTotal() * 1.02).toFixed(2)}
+                  <button
+                    onClick={handleCheckout}
+                    disabled={checkoutLoading}
+                    className="w-full bg-brand-500 text-black py-3.5 rounded-xl font-semibold hover:bg-brand-400 disabled:opacity-50 transition-colors"
+                  >
+                    {checkoutLoading ? "Processing..." : `Checkout — €${(getTotal() * 1.02).toFixed(2)}`}
                   </button>
                   <p className="text-xs text-white/20 text-center mt-2">Secure payment via Stripe</p>
                 </div>
