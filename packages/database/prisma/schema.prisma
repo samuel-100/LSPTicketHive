@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ATTENDEE
+  ORGANIZER
+  ADMIN
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  REFUNDED
+  CANCELLED
+}
+
+enum TicketStatus {
+  VALID
+  USED
+  CANCELLED
+  TRANSFERRED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  firstName     String
+  lastName      String
+  role          UserRole  @default(ATTENDEE)
+  avatarUrl     String?
+  phone         String?
+  emailVerified Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  organization   Organization? @relation("OrganizationOwner")
+  orders         Order[]
+  tickets        Ticket[]
+  reviews        Review[]
+  savedEvents    SavedEvent[]
+
+  @@index([email])
+}
+
+model Organization {
+  id                String           @id @default(cuid())
+  name              String
+  slug              String           @unique
+  description       String?
+  logoUrl           String?
+  website           String?
+  stripeAccountId   String?          @unique
+  stripeOnboarded   Boolean          @default(false)
+  subscriptionTier  SubscriptionTier @default(FREE)
+  platformFeeRate   Float            @default(2.0)
+  ownerId           String           @unique
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  owner    User      @relation("OrganizationOwner", fields: [ownerId], references: [id])
+  events   Event[]
+  payouts  Payout[]
+
+  @@index([slug])
+}
+
+model Event {
+  id             String      @id @default(cuid())
+  title          String
+  slug           String
+  description    String
+  shortDesc      String?
+  coverImageUrl  String?
+  venue          String?
+  address        String?
+  city           String?
+  country        String?
+  latitude       Float?
+  longitude      Float?
+  isOnline       Boolean     @default(false)
+  onlineUrl      String?
+  startDate      DateTime
+  endDate        DateTime
+  timezone       String      @default("UTC")
+  status         EventStatus @default(DRAFT)
+  category       String?
+  tags           String[]
+  totalCapacity  Int
+  organizationId String
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  ticketTypes  TicketType[]
+  orders       Order[]
+  reviews      Review[]
+  savedBy      SavedEvent[]
+
+  @@unique([organizationId, slug])
+  @@index([status, startDate])
+  @@index([city, category])
+}
+
+model TicketType {
+  id            String   @id @default(cuid())
+  name          String
+  description   String?
+  price         Float
+  currency      String   @default("USD")
+  quantity      Int
+  sold          Int      @default(0)
+  maxPerOrder   Int      @default(10)
+  salesStart    DateTime?
+  salesEnd      DateTime?
+  eventId       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tickets Ticket[]
+
+  @@index([eventId])
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String      @unique @default(cuid())
+  status          OrderStatus @default(PENDING)
+  subtotal        Float
+  platformFee     Float
+  processingFee   Float
+  total           Float
+  currency        String      @default("USD")
+  stripePaymentId String?     @unique
+  userId          String
+  eventId         String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id])
+  event   Event    @relation(fields: [eventId], references: [id])
+  tickets Ticket[]
+
+  @@index([userId])
+  @@index([eventId])
+  @@index([orderNumber])
+}
+
+model Ticket {
+  id           String       @id @default(cuid())
+  qrCode       String       @unique @default(cuid())
+  status       TicketStatus @default(VALID)
+  checkedInAt  DateTime?
+  ticketTypeId String
+  orderId      String
+  userId       String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  ticketType TicketType @relation(fields: [ticketTypeId], references: [id])
+  order      Order      @relation(fields: [orderId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@index([qrCode])
+  @@index([userId])
+}
+
+model Payout {
+  id              String       @id @default(cuid())
+  amount          Float
+  currency        String       @default("USD")
+  status          PayoutStatus @default(PENDING)
+  stripePayoutId  String?      @unique
+  organizationId  String
+  createdAt       DateTime     @default(now())
+  completedAt     DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, status])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+}
+
+model SavedEvent {
+  id      String @id @default(cuid())
+  userId  String
+  eventId String
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+}
