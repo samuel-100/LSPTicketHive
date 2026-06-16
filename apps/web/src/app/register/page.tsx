@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const defaultRole = searchParams.get("role") === "organizer" ? "ORGANIZER" : "ATTENDEE";
