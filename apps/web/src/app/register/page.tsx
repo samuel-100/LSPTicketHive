@@ -38,7 +38,8 @@ function RegisterForm() {
       const data = await res.json();
 
       if (!data.success) {
-        setError(data.error || "Registration failed");
+        const msg = data.error?.includes("already") ? "This email is already registered. Try logging in instead." : (data.error || "Registration failed");
+        setError(msg);
         setLoading(false);
         return;
       }

@@ -85,26 +85,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      {/* Header */}
-      <header className="bg-[#0a0a0a]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
-              <Ticket className="w-5 h-5 text-black" />
-            </div>
-            <span className="text-xl font-bold text-white">LSPTicketHive</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard/create" className="bg-brand-500 text-black px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-brand-400 transition-colors flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Create Event
-            </Link>
-            <button onClick={handleLogout} className="text-white/40 hover:text-white transition-colors">
-              <LogOut className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </header>
 
       <div className="max-w-7xl mx-auto px-6 py-10">
         {/* Welcome */}

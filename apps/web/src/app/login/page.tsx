@@ -28,7 +28,7 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!data.success) {
-        setError(data.error || "Login failed");
+        setError(data.error === "Invalid credentials" ? "Wrong email or password. Try again." : (data.error || "Login failed"));
         setLoading(false);
         return;
       }
