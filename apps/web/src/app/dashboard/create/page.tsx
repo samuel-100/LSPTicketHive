@@ -60,10 +60,37 @@ export default function CreateEventPage() {
     setTickets(updated);
   }
 
+  async function ensureOrganization() {
+    const res = await fetch(`${API_URL}/api/organizations/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (data.data) return true;
+
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const orgName = `${user.firstName || "My"}'s Events`;
+    const slug = orgName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-");
+
+    const createRes = await fetch(`${API_URL}/api/organizations`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ name: orgName, slug: slug + "-" + Date.now() }),
+    });
+    const createData = await createRes.json();
+    return createData.success;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    const orgReady = await ensureOrganization();
+    if (!orgReady) {
+      setError("Failed to set up your organizer profile. Please try again.");
+      setLoading(false);
+      return;
+    }
 
     const payload = {
       ...form,

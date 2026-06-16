@@ -35,15 +35,21 @@ export default function DashboardPage() {
 
   async function fetchMyEvents(token: string) {
     try {
-      const res = await fetch(`${API_URL}/api/events/my`, {
+      const res = await fetch(`${API_URL}/api/organizations/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      if (data.success) {
-        setEvents(data.data || []);
+      if (data.data) {
+        const eventsRes = await fetch(`${API_URL}/api/events?orgId=${data.data.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const eventsData = await eventsRes.json();
+        if (eventsData.success) {
+          setEvents(eventsData.data?.items || []);
+        }
       }
     } catch {
-      // API might not have /my endpoint yet
+      // org not created yet
     }
     setLoading(false);
   }
