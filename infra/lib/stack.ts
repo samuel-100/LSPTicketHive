@@ -29,22 +29,17 @@ export class LSPTicketHiveStack extends cdk.Stack {
     });
     dbSg.addIngressRule(ec2.Peer.ipv4(vpc.vpcCidrBlock), ec2.Port.tcp(5432));
 
-    // Secrets
+    // App secrets (Stripe, JWT)
     const appSecrets = new secretsmanager.Secret(this, "AppSecrets", {
       secretName: "lsp-tickethive/app",
-      generateSecretString: {
-        secretStringTemplate: JSON.stringify({
-          STRIPE_SECRET_KEY: "sk_test_CHANGE_ME",
-          STRIPE_WEBHOOK_SECRET: "whsec_CHANGE_ME",
-          JWT_SECRET: "CHANGE_ME",
-        }),
-        generateStringKey: "DB_PASSWORD",
-        excludePunctuation: true,
-        passwordLength: 32,
-      },
+      secretStringValue: cdk.SecretValue.unsafePlainText(JSON.stringify({
+        STRIPE_SECRET_KEY: "sk_test_CHANGE_ME",
+        STRIPE_WEBHOOK_SECRET: "whsec_CHANGE_ME",
+        JWT_SECRET: "CHANGE_ME",
+      })),
     });
 
-    // RDS PostgreSQL (free tier eligible)
+    // RDS PostgreSQL (free tier eligible) — generates its own credentials
     const database = new rds.DatabaseInstance(this, "Database", {
       engine: rds.DatabaseInstanceEngine.postgres({ version: rds.PostgresEngineVersion.VER_15 }),
       instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
@@ -52,10 +47,10 @@ export class LSPTicketHiveStack extends cdk.Stack {
       vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
       securityGroups: [dbSg],
       databaseName: "tickethive",
-      credentials: rds.Credentials.fromSecret(appSecrets),
+      credentials: rds.Credentials.fromGeneratedSecret("tickethive_admin"),
       allocatedStorage: 20,
       maxAllocatedStorage: 50,
-      publiclyAccessible: true, // for initial setup via Cloud9 — lock down later
+      publiclyAccessible: true,
       removalPolicy: cdk.RemovalPolicy.SNAPSHOT,
       backupRetention: cdk.Duration.days(7),
     });
