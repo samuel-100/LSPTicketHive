@@ -52,7 +52,7 @@ export class LSPTicketHiveStack extends cdk.Stack {
       maxAllocatedStorage: 50,
       publiclyAccessible: true,
       removalPolicy: cdk.RemovalPolicy.SNAPSHOT,
-      backupRetention: cdk.Duration.days(7),
+      backupRetention: cdk.Duration.days(1),
     });
 
     // S3 bucket for event images
