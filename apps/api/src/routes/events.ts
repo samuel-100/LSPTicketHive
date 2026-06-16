@@ -73,7 +73,7 @@ eventsRouter.get("/:id", async (req, res) => {
 });
 
 // Organizer: create event
-eventsRouter.post("/", authenticate, requireRole("ORGANIZER", "ADMIN"), async (req: AuthRequest, res) => {
+eventsRouter.post("/", authenticate, async (req: AuthRequest, res) => {
   try {
     const input = createEventSchema.parse(req.body);
 
@@ -118,7 +118,7 @@ eventsRouter.post("/", authenticate, requireRole("ORGANIZER", "ADMIN"), async (r
 });
 
 // Organizer: publish event
-eventsRouter.patch("/:id/publish", authenticate, requireRole("ORGANIZER", "ADMIN"), async (req: AuthRequest, res) => {
+eventsRouter.patch("/:id/publish", authenticate, async (req: AuthRequest, res) => {
   const org = await prisma.organization.findUnique({ where: { ownerId: req.user!.userId } });
   if (!org) return res.status(403).json({ success: false, error: "Not authorized" });
 
@@ -132,7 +132,7 @@ eventsRouter.patch("/:id/publish", authenticate, requireRole("ORGANIZER", "ADMIN
 });
 
 // Organizer: list own events
-eventsRouter.get("/my/events", authenticate, requireRole("ORGANIZER", "ADMIN"), async (req: AuthRequest, res) => {
+eventsRouter.get("/my/events", authenticate, async (req: AuthRequest, res) => {
   const org = await prisma.organization.findUnique({ where: { ownerId: req.user!.userId } });
   if (!org) return res.json({ success: true, data: [] });
 

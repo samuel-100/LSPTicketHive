@@ -7,31 +7,9 @@ const HeroScene = dynamic(() => import("./components/HeroScene"), { ssr: false }
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      {/* Header */}
-      <header className="fixed top-0 w-full bg-[#0a0a0a]/80 backdrop-blur-md border-b border-white/5 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
-              <Ticket className="w-5 h-5 text-black" />
-            </div>
-            <span className="text-xl font-bold text-white">LSPTicketHive</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/events" className="text-sm font-medium text-white/60 hover:text-white transition-colors">
-              Browse Events
-            </Link>
-            <Link href="/login" className="text-sm font-medium text-white/60 hover:text-white transition-colors">
-              Login
-            </Link>
-            <Link href="/register" className="bg-brand-500 text-black px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-brand-400 transition-colors">
-              Get Started
-            </Link>
-          </nav>
-        </div>
-      </header>
 
       {/* Hero */}
-      <section className="pt-36 pb-24 px-6 relative overflow-hidden">
+      <section className="pt-20 pb-24 px-6 relative overflow-hidden">
         <HeroScene />
         <div className="max-w-5xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center gap-2 bg-brand-500/10 border border-brand-500/20 rounded-full px-4 py-1.5 mb-8">

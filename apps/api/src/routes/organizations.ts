@@ -15,7 +15,7 @@ const createOrgSchema = z.object({
 });
 
 // Create organization (become a seller)
-organizationsRouter.post("/", authenticate, requireRole("ORGANIZER", "ADMIN"), async (req: AuthRequest, res) => {
+organizationsRouter.post("/", authenticate, async (req: AuthRequest, res) => {
   try {
     const input = createOrgSchema.parse(req.body);
 
@@ -44,7 +44,7 @@ organizationsRouter.post("/", authenticate, requireRole("ORGANIZER", "ADMIN"), a
 });
 
 // Connect Stripe account for payouts
-organizationsRouter.post("/connect-stripe", authenticate, requireRole("ORGANIZER", "ADMIN"), async (req: AuthRequest, res) => {
+organizationsRouter.post("/connect-stripe", authenticate, async (req: AuthRequest, res) => {
   const org = await prisma.organization.findUnique({ where: { ownerId: req.user!.userId } });
   if (!org) return res.status(404).json({ success: false, error: "Organization not found" });
 

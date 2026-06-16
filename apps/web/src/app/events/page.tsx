@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Calendar, MapPin, Search, Ticket } from "lucide-react";
+import { Calendar, MapPin, Search } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -55,21 +55,6 @@ export default function EventsPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      {/* Header */}
-      <header className="bg-[#0a0a0a]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
-              <Ticket className="w-5 h-5 text-black" />
-            </div>
-            <span className="text-xl font-bold text-white">LSPTicketHive</span>
-          </Link>
-          <nav className="flex items-center gap-6">
-            <Link href="/login" className="text-sm text-white/60 hover:text-white transition-colors">Login</Link>
-            <Link href="/register" className="bg-brand-500 text-black px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-brand-400 transition-colors">Sign Up</Link>
-          </nav>
-        </div>
-      </header>
 
       <div className="max-w-7xl mx-auto px-6 py-10">
         {/* Title + Search */}
