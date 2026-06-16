@@ -88,6 +88,10 @@ export default function EventDetailPage() {
       const data = await res.json();
       if (data.data?.checkoutUrl) {
         window.location.href = data.data.checkoutUrl;
+      } else if (data.data?.free) {
+        window.location.href = `/orders/${data.data.orderId}?success=true`;
+      } else if (data.data?.orderId) {
+        window.location.href = `/orders/${data.data.orderId}?success=true`;
       } else {
         alert(data.error || "Checkout failed");
       }
