@@ -43,7 +43,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         });
       }
 
-      done(null, user);
+      done(null, { userId: user.id, email: user.email, role: user.role, firstName: user.firstName, lastName: user.lastName } as any);
     } catch (err) {
       done(err as Error);
     }
@@ -59,12 +59,12 @@ oauthRouter.get("/google/callback",
   passport.authenticate("google", { session: false, failureRedirect: `${FRONTEND_URL}/login?error=google_failed` }),
   (req, res) => {
     const user = req.user as any;
-    const token = signToken({ userId: user.id, email: user.email, role: user.role });
+    const token = signToken({ userId: user.userId, email: user.email, role: user.role });
 
     res.cookie("token", token, COOKIE_OPTIONS);
 
     const userJson = encodeURIComponent(JSON.stringify({
-      id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role
+      id: user.userId, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role
     }));
 
     res.redirect(`${FRONTEND_URL}/auth/callback?user=${userJson}`);
