@@ -1,5 +1,8 @@
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Calendar, Ticket, TrendingUp, Shield, ArrowRight, Star, Users, Zap } from "lucide-react";
+
+const HeroScene = dynamic(() => import("./components/HeroScene"), { ssr: false });
 
 export default function HomePage() {
   return (
@@ -28,8 +31,9 @@ export default function HomePage() {
       </header>
 
       {/* Hero */}
-      <section className="pt-36 pb-24 px-6">
-        <div className="max-w-5xl mx-auto text-center">
+      <section className="pt-36 pb-24 px-6 relative overflow-hidden">
+        <HeroScene />
+        <div className="max-w-5xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center gap-2 bg-brand-500/10 border border-brand-500/20 rounded-full px-4 py-1.5 mb-8">
             <Zap className="w-4 h-4 text-brand-400" />
             <span className="text-sm font-medium text-brand-400">Only 2% platform fee — lowest in industry</span>
