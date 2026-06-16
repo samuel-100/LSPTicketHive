@@ -2,18 +2,26 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Ticket, Search, Menu, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Ticket, Search, Menu, X, MapPin } from "lucide-react";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState<{ firstName: string; role: string } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [location, setLocation] = useState("Dublin");
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
     if (stored) setUser(JSON.parse(stored));
   }, []);
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    router.push(`/events?search=${searchQuery}&city=${location}`);
+  }
 
   function handleLogout() {
     localStorage.removeItem("token");
@@ -35,32 +43,65 @@ export default function Navbar() {
           <span className="text-lg font-bold text-white hidden sm:block">LSPTicketHive</span>
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-1">
-          <NavLink href="/events" active={isActive("/events")}>Find Events</NavLink>
-          {user && <NavLink href="/dashboard/create" active={isActive("/dashboard/create")}>Create Events</NavLink>}
-          {user && <NavLink href="/tickets" active={isActive("/tickets")}>My Tickets</NavLink>}
-          {user && <NavLink href="/dashboard" active={isActive("/dashboard")}>Dashboard</NavLink>}
-        </nav>
+        {/* Search Bar */}
+        <form onSubmit={handleSearch} className="hidden md:flex items-center flex-1 max-w-xl mx-6">
+          <div className="flex items-center w-full bg-white/5 border border-white/10 rounded-full overflow-hidden">
+            <div className="flex items-center gap-2 pl-4 pr-2 flex-1">
+              <Search className="w-4 h-4 text-white/30" />
+              <input
+                type="text"
+                placeholder="Search events"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="bg-transparent text-sm text-white placeholder:text-white/30 outline-none w-full py-2.5"
+              />
+            </div>
+            <div className="h-6 w-px bg-white/10" />
+            <div className="flex items-center gap-2 px-3">
+              <MapPin className="w-4 h-4 text-brand-400" />
+              <select
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                className="bg-transparent text-sm text-white/60 outline-none appearance-none cursor-pointer pr-2"
+              >
+                <option value="Dublin">Dublin</option>
+                <option value="London">London</option>
+                <option value="Belfast">Belfast</option>
+                <option value="Lagos">Lagos</option>
+                <option value="New York">New York</option>
+                <option value="Paris">Paris</option>
+                <option value="Berlin">Berlin</option>
+                <option value="Accra">Accra</option>
+                <option value="">All Cities</option>
+              </select>
+            </div>
+            <button type="submit" className="bg-brand-500 text-black p-2.5 rounded-full m-1 hover:bg-brand-400 transition-colors">
+              <Search className="w-4 h-4" />
+            </button>
+          </div>
+        </form>
 
         {/* Right Side */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-1">
           {user ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-white/40">{user.firstName}</span>
-              <button onClick={handleLogout} className="text-sm text-white/40 hover:text-white transition-colors">
+            <>
+              <NavLink href="/dashboard/create" active={isActive("/dashboard/create")}>Create</NavLink>
+              <NavLink href="/tickets" active={isActive("/tickets")}>Tickets</NavLink>
+              <NavLink href="/dashboard" active={isActive("/dashboard")}>Dashboard</NavLink>
+              <span className="text-sm text-white/40 px-2">{user.firstName}</span>
+              <button onClick={handleLogout} className="text-xs text-white/30 hover:text-white transition-colors px-2">
                 Log out
               </button>
-            </div>
+            </>
           ) : (
-            <div className="flex items-center gap-3">
+            <>
               <Link href="/login" className="text-sm font-medium text-white/60 hover:text-white transition-colors px-3 py-2">
                 Sign in
               </Link>
               <Link href="/register" className="bg-brand-500 text-black px-5 py-2 rounded-full text-sm font-semibold hover:bg-brand-400 transition-colors">
                 Sign up
               </Link>
-            </div>
+            </>
           )}
         </div>
 

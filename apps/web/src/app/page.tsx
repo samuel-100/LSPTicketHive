@@ -55,21 +55,17 @@ export default function HomePage() {
       {/* Browse by City */}
       <section className="py-16 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold text-white mb-2">Events around the world</h2>
-          <p className="text-white/40 text-sm mb-8">Discover what&apos;s happening in your city</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            <CityCard city="Dublin" country="Ireland" emoji="🇮🇪" events={12} />
-            <CityCard city="London" country="UK" emoji="🇬🇧" events={45} />
-            <CityCard city="Belfast" country="N. Ireland" emoji="🇬🇧" events={8} />
-            <CityCard city="New York" country="USA" emoji="🇺🇸" events={120} />
-            <CityCard city="Lagos" country="Nigeria" emoji="🇳🇬" events={34} />
-            <CityCard city="Berlin" country="Germany" emoji="🇩🇪" events={28} />
-            <CityCard city="Amsterdam" country="Netherlands" emoji="🇳🇱" events={19} />
-            <CityCard city="Paris" country="France" emoji="🇫🇷" events={67} />
-            <CityCard city="Barcelona" country="Spain" emoji="🇪🇸" events={41} />
-            <CityCard city="Toronto" country="Canada" emoji="🇨🇦" events={53} />
-            <CityCard city="Sydney" country="Australia" emoji="🇦🇺" events={22} />
-            <CityCard city="Accra" country="Ghana" emoji="🇬🇭" events={15} />
+          <h2 className="text-2xl font-bold text-white mb-2">Explore events by city</h2>
+          <p className="text-white/40 text-sm mb-8">Find what&apos;s happening near you or around the world</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <CityCard city="Dublin" image="https://images.unsplash.com/photo-1549918864-48ac978761a4?w=400&q=80" />
+            <CityCard city="London" image="https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=400&q=80" />
+            <CityCard city="Lagos" image="https://images.unsplash.com/photo-1618828665011-0abd973f7bb8?w=400&q=80" />
+            <CityCard city="New York" image="https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=400&q=80" />
+            <CityCard city="Paris" image="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80" />
+            <CityCard city="Berlin" image="https://images.unsplash.com/photo-1560969184-10fe8719e047?w=400&q=80" />
+            <CityCard city="Accra" image="https://images.unsplash.com/photo-1582556172498-1d36c7e75ff8?w=400&q=80" />
+            <CityCard city="Barcelona" image="https://images.unsplash.com/photo-1583422409516-2895a77efded?w=400&q=80" />
           </div>
         </div>
       </section>
@@ -209,12 +205,14 @@ export default function HomePage() {
   );
 }
 
-function CityCard({ city, country, emoji, events }: { city: string; country: string; emoji: string; events: number }) {
+function CityCard({ city, image }: { city: string; image: string }) {
   return (
-    <Link href={`/events?city=${city}`} className="group bg-white/[0.02] border border-white/5 rounded-xl p-4 hover:border-brand-500/30 hover:bg-brand-500/[0.03] transition-all text-center">
-      <div className="text-2xl mb-2">{emoji}</div>
-      <div className="font-medium text-white text-sm group-hover:text-brand-400 transition-colors">{city}</div>
-      <div className="text-xs text-white/30 mt-0.5">{events} events</div>
+    <Link href={`/events?city=${city}`} className="group relative h-36 rounded-xl overflow-hidden">
+      <img src={image} alt={city} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+      <div className="absolute bottom-0 left-0 p-4">
+        <div className="font-semibold text-white">{city}</div>
+      </div>
     </Link>
   );
 }
