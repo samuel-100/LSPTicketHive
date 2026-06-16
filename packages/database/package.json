@@ -2,7 +2,7 @@
   "name": "@lsp-tickethive/database",
   "version": "0.1.0",
   "private": true,
-  "main": "./src/index.ts",
+  "main": "./src/index.js",
   "scripts": {
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
