@@ -62,6 +62,11 @@ function RegisterForm() {
         return;
       }
 
+      if (data.data.requiresVerification) {
+        router.push(`/verify?email=${encodeURIComponent(form.email)}`);
+        return;
+      }
+
       localStorage.setItem("token", data.data.token);
       localStorage.setItem("user", JSON.stringify(data.data.user));
 

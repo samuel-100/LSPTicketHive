@@ -3,6 +3,41 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@lsp-tickethive/database";
 import { signToken, authenticate, AuthRequest } from "../middleware/auth";
 import { z } from "zod";
+import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+
+const ses = new SESClient({ region: process.env.AWS_REGION || "eu-west-1" });
+const FROM_EMAIL = process.env.FROM_EMAIL || "mansaraysamuellamin001@gmail.com";
+
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function sendOTPEmail(email: string, code: string, name: string) {
+  try {
+    await ses.send(new SendEmailCommand({
+      Source: `LSPTicketHive <${FROM_EMAIL}>`,
+      Destination: { ToAddresses: [email] },
+      Message: {
+        Subject: { Data: `${code} is your LSPTicketHive verification code` },
+        Body: {
+          Html: { Data: `
+            <div style="font-family:-apple-system,sans-serif;max-width:400px;margin:0 auto;padding:40px 20px;text-align:center;">
+              <h2 style="color:#22c55e;margin-bottom:8px;">LSPTicketHive</h2>
+              <p style="color:#666;margin-bottom:24px;">Hi ${name}, verify your email to get started.</p>
+              <div style="background:#f5f5f5;border-radius:12px;padding:24px;margin-bottom:24px;">
+                <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#111;">${code}</span>
+              </div>
+              <p style="color:#999;font-size:13px;">This code expires in 10 minutes.</p>
+            </div>
+          ` },
+          Text: { Data: `Your LSPTicketHive verification code is: ${code}. Expires in 10 minutes.` },
+        },
+      },
+    }));
+  } catch (err) {
+    console.error("Failed to send OTP email:", err);
+  }
+}
 
 export const authRouter = Router();
 
@@ -47,13 +82,23 @@ authRouter.post("/register", async (req, res) => {
       },
     });
 
-    const token = signToken({ userId: user.id, email: user.email, role: user.role });
+    // Send OTP for email verification
+    const code = generateOTP();
+    await prisma.verificationCode.create({
+      data: {
+        email: user.email,
+        code,
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      },
+    });
 
-    res.cookie("token", token, COOKIE_OPTIONS);
+    sendOTPEmail(user.email, code, user.firstName);
+
     res.status(201).json({
       success: true,
       data: {
-        token,
+        requiresVerification: true,
+        email: user.email,
         user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role },
       },
     });
@@ -95,6 +140,53 @@ authRouter.post("/login", async (req, res) => {
     }
     res.status(500).json({ success: false, error: "Internal server error" });
   }
+});
+
+authRouter.post("/verify", async (req, res) => {
+  const { email, code } = req.body;
+  if (!email || !code) return res.status(400).json({ success: false, error: "Email and code required" });
+
+  const verification = await prisma.verificationCode.findFirst({
+    where: { email, code, used: false, expiresAt: { gt: new Date() } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!verification) {
+    return res.status(400).json({ success: false, error: "Invalid or expired code" });
+  }
+
+  await prisma.verificationCode.update({ where: { id: verification.id }, data: { used: true } });
+  await prisma.user.update({ where: { email }, data: { emailVerified: true } });
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return res.status(404).json({ success: false, error: "User not found" });
+
+  const token = signToken({ userId: user.id, email: user.email, role: user.role });
+  res.cookie("token", token, COOKIE_OPTIONS);
+
+  res.json({
+    success: true,
+    data: {
+      token,
+      user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role },
+    },
+  });
+});
+
+authRouter.post("/resend-code", async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ success: false, error: "Email required" });
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return res.status(404).json({ success: false, error: "User not found" });
+
+  const code = generateOTP();
+  await prisma.verificationCode.create({
+    data: { email, code, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+  });
+
+  sendOTPEmail(email, code, user.firstName);
+  res.json({ success: true, message: "Code sent" });
 });
 
 authRouter.post("/logout", (_req, res) => {
