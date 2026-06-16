@@ -52,15 +52,78 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features - condensed */}
+      {/* Browse by City */}
       <section className="py-16 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl font-bold text-white text-center mb-10">Why organizers choose us</h2>
-          <div className="grid md:grid-cols-4 gap-5">
-            <FeatureCard icon={<Ticket className="w-5 h-5" />} title="Only 2% Fee" description="Lowest in ticketing. Keep more revenue." />
-            <FeatureCard icon={<TrendingUp className="w-5 h-5" />} title="Next-Day Payouts" description="Get paid fast. No waiting 5-7 days." />
-            <FeatureCard icon={<Calendar className="w-5 h-5" />} title="5-Minute Setup" description="Create your event page in minutes." />
-            <FeatureCard icon={<Shield className="w-5 h-5" />} title="Secure & Reliable" description="Bank-grade encryption. 99.9% uptime." />
+          <h2 className="text-2xl font-bold text-white mb-2">Events around the world</h2>
+          <p className="text-white/40 text-sm mb-8">Discover what&apos;s happening in your city</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <CityCard city="Dublin" country="Ireland" emoji="🇮🇪" events={12} />
+            <CityCard city="London" country="UK" emoji="🇬🇧" events={45} />
+            <CityCard city="Belfast" country="N. Ireland" emoji="🇬🇧" events={8} />
+            <CityCard city="New York" country="USA" emoji="🇺🇸" events={120} />
+            <CityCard city="Lagos" country="Nigeria" emoji="🇳🇬" events={34} />
+            <CityCard city="Berlin" country="Germany" emoji="🇩🇪" events={28} />
+            <CityCard city="Amsterdam" country="Netherlands" emoji="🇳🇱" events={19} />
+            <CityCard city="Paris" country="France" emoji="🇫🇷" events={67} />
+            <CityCard city="Barcelona" country="Spain" emoji="🇪🇸" events={41} />
+            <CityCard city="Toronto" country="Canada" emoji="🇨🇦" events={53} />
+            <CityCard city="Sydney" country="Australia" emoji="🇦🇺" events={22} />
+            <CityCard city="Accra" country="Ghana" emoji="🇬🇭" events={15} />
+          </div>
+        </div>
+      </section>
+
+      {/* Stats + Trust */}
+      <section className="py-16 px-6 border-t border-white/5">
+        <div className="max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            <div>
+              <div className="text-3xl font-bold text-brand-400 mb-1">10K+</div>
+              <div className="text-sm text-white/40">Events hosted</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-brand-400 mb-1">50K+</div>
+              <div className="text-sm text-white/40">Tickets sold</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-brand-400 mb-1">2%</div>
+              <div className="text-sm text-white/40">Platform fee</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-brand-400 mb-1">24hr</div>
+              <div className="text-sm text-white/40">Payout speed</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-16 px-6 border-t border-white/5">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="text-2xl font-bold text-white text-center mb-10">Start in 3 steps</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-14 h-14 bg-brand-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span className="text-brand-400 text-xl font-bold">1</span>
+              </div>
+              <h4 className="font-semibold text-white mb-2">Create your event</h4>
+              <p className="text-sm text-white/40">Add details, upload a flyer, set ticket prices. Takes 2 minutes.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-brand-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span className="text-brand-400 text-xl font-bold">2</span>
+              </div>
+              <h4 className="font-semibold text-white mb-2">Share & sell</h4>
+              <p className="text-sm text-white/40">Share your link. We handle payments, refunds, and notifications.</p>
+            </div>
+            <div className="text-center">
+              <div className="w-14 h-14 bg-brand-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <span className="text-brand-400 text-xl font-bold">3</span>
+              </div>
+              <h4 className="font-semibold text-white mb-2">Get paid next day</h4>
+              <p className="text-sm text-white/40">Money goes straight to your bank. Only 2% fee. No hidden costs.</p>
+            </div>
           </div>
         </div>
       </section>
@@ -146,14 +209,12 @@ export default function HomePage() {
   );
 }
 
-function FeatureCard({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
+function CityCard({ city, country, emoji, events }: { city: string; country: string; emoji: string; events: number }) {
   return (
-    <div className="bg-white/[0.02] rounded-xl p-6 border border-white/5">
-      <div className="w-10 h-10 bg-brand-500/10 rounded-lg flex items-center justify-center text-brand-400 mb-4">
-        {icon}
-      </div>
-      <h4 className="font-semibold text-white mb-1">{title}</h4>
-      <p className="text-sm text-white/40">{description}</p>
-    </div>
+    <Link href={`/events?city=${city}`} className="group bg-white/[0.02] border border-white/5 rounded-xl p-4 hover:border-brand-500/30 hover:bg-brand-500/[0.03] transition-all text-center">
+      <div className="text-2xl mb-2">{emoji}</div>
+      <div className="font-medium text-white text-sm group-hover:text-brand-400 transition-colors">{city}</div>
+      <div className="text-xs text-white/30 mt-0.5">{events} events</div>
+    </Link>
   );
 }
