@@ -11,11 +11,29 @@ export default function Navbar() {
   const [user, setUser] = useState<{ firstName: string; role: string } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [location, setLocation] = useState("Dublin");
+  const [location, setLocation] = useState("Detecting...");
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
     if (stored) setUser(JSON.parse(stored));
+
+    // Auto-detect location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&localityLanguage=en`);
+            const data = await res.json();
+            setLocation(data.city || data.locality || "Dublin");
+          } catch {
+            setLocation("Dublin");
+          }
+        },
+        () => setLocation("Dublin")
+      );
+    } else {
+      setLocation("Dublin");
+    }
   }, []);
 
   function handleSearch(e: React.FormEvent) {
@@ -44,39 +62,27 @@ export default function Navbar() {
         </Link>
 
         {/* Search Bar */}
-        <form onSubmit={handleSearch} className="hidden md:flex items-center flex-1 max-w-xl mx-6">
-          <div className="flex items-center w-full bg-white/5 border border-white/10 rounded-full overflow-hidden">
-            <div className="flex items-center gap-2 pl-4 pr-2 flex-1">
-              <Search className="w-4 h-4 text-white/30" />
+        <form onSubmit={handleSearch} className="hidden md:flex items-center flex-1 max-w-lg mx-6">
+          <div className="flex items-center w-full bg-[#1a1a1a] border border-white/[0.06] rounded-full">
+            <div className="flex items-center gap-2 pl-4 flex-1">
+              <Search className="w-4 h-4 text-white/25 shrink-0" />
               <input
                 type="text"
                 placeholder="Search events"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="bg-transparent text-sm text-white placeholder:text-white/30 outline-none w-full py-2.5"
+                className="bg-transparent text-sm text-white placeholder:text-white/25 outline-none w-full py-2.5"
               />
             </div>
-            <div className="h-6 w-px bg-white/10" />
-            <div className="flex items-center gap-2 px-3">
-              <MapPin className="w-4 h-4 text-brand-400" />
-              <select
-                value={location}
-                onChange={e => setLocation(e.target.value)}
-                className="bg-transparent text-sm text-white/60 outline-none appearance-none cursor-pointer pr-2"
-              >
-                <option value="Dublin">Dublin</option>
-                <option value="London">London</option>
-                <option value="Belfast">Belfast</option>
-                <option value="Lagos">Lagos</option>
-                <option value="New York">New York</option>
-                <option value="Paris">Paris</option>
-                <option value="Berlin">Berlin</option>
-                <option value="Accra">Accra</option>
-                <option value="">All Cities</option>
-              </select>
+            <div className="flex items-center gap-1.5 px-3 border-l border-white/[0.06] cursor-pointer" onClick={() => {
+              const city = prompt("Enter your city:", location);
+              if (city) setLocation(city);
+            }}>
+              <MapPin className="w-3.5 h-3.5 text-brand-400" />
+              <span className="text-sm text-white/50 whitespace-nowrap">{location}</span>
             </div>
-            <button type="submit" className="bg-brand-500 text-black p-2.5 rounded-full m-1 hover:bg-brand-400 transition-colors">
-              <Search className="w-4 h-4" />
+            <button type="submit" className="bg-brand-500 p-2 rounded-full m-1 hover:bg-brand-400 transition-colors">
+              <Search className="w-4 h-4 text-black" />
             </button>
           </div>
         </form>
