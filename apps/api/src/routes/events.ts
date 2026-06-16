@@ -2,6 +2,7 @@ import { Router } from "express";
 import { prisma } from "@lsp-tickethive/database";
 import { authenticate, requireRole, AuthRequest } from "../middleware/auth";
 import { z } from "zod";
+import { sendNewEventNotification } from "../services/email";
 
 export const eventsRouter = Router();
 
@@ -108,6 +109,12 @@ eventsRouter.post("/", authenticate, async (req: AuthRequest, res) => {
       include: { ticketTypes: true },
     });
 
+    // Publish immediately and notify followers
+    await prisma.event.update({ where: { id: event.id }, data: { status: "PUBLISHED" } });
+
+    // Notify followers in background (don't block response)
+    notifyFollowers(org.id, org.name, event.id, event.title, event.startDate, event.venue || "").catch(console.error);
+
     res.status(201).json({ success: true, data: event });
   } catch (err) {
     if (err instanceof z.ZodError) {
@@ -144,3 +151,26 @@ eventsRouter.get("/my/events", authenticate, async (req: AuthRequest, res) => {
 
   res.json({ success: true, data: events });
 });
+
+async function notifyFollowers(orgId: string, orgName: string, eventId: string, eventTitle: string, startDate: Date, venue: string) {
+  const followers = await prisma.follow.findMany({
+    where: { organizationId: orgId },
+    include: { user: { select: { email: true, firstName: true } } },
+  });
+
+  const dateStr = startDate.toLocaleDateString("en-IE", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+
+  for (const follow of followers) {
+    await sendNewEventNotification(
+      (follow as any).user.email,
+      (follow as any).user.firstName,
+      orgName,
+      eventTitle,
+      eventId,
+      dateStr,
+      venue
+    );
+  }
+
+  console.log(`Notified ${followers.length} followers about: ${eventTitle}`);
+}
