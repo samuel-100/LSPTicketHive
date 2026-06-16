@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Ticket, CheckCircle, Calendar, MapPin } from "lucide-react";
 import { Suspense } from "react";
+import QRCode from "../../components/QRCode";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -85,11 +86,11 @@ function OrderContent() {
         <div className="space-y-4">
           {order.tickets.map((ticket, i) => (
             <div key={ticket.id} className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 text-center">
-              <div className="text-sm text-white/40 mb-2">Ticket {i + 1} — {ticket.ticketType.name}</div>
+              <div className="text-sm text-white/40 mb-3">Ticket {i + 1} — {ticket.ticketType.name}</div>
               <div className="bg-white rounded-xl p-4 inline-block mb-3">
-                <QRCode value={ticket.qrCode} />
+                <QRCode value={ticket.qrCode} size={180} />
               </div>
-              <div className="text-xs text-white/20 font-mono">{ticket.qrCode}</div>
+              <div className="text-xs text-white/20 font-mono mt-2">{ticket.qrCode}</div>
             </div>
           ))}
         </div>
@@ -114,31 +115,6 @@ function OrderContent() {
   );
 }
 
-function QRCode({ value }: { value: string }) {
-  return (
-    <svg viewBox="0 0 100 100" className="w-40 h-40">
-      <rect width="100" height="100" fill="white" />
-      <text x="50" y="45" textAnchor="middle" fontSize="8" fill="#333">
-        {value.substring(0, 12)}
-      </text>
-      <text x="50" y="60" textAnchor="middle" fontSize="6" fill="#666">
-        Scan at door
-      </text>
-      {/* Simple QR-like pattern */}
-      <rect x="10" y="10" width="20" height="20" fill="#000" rx="2" />
-      <rect x="70" y="10" width="20" height="20" fill="#000" rx="2" />
-      <rect x="10" y="70" width="20" height="20" fill="#000" rx="2" />
-      <rect x="14" y="14" width="12" height="12" fill="white" />
-      <rect x="74" y="14" width="12" height="12" fill="white" />
-      <rect x="14" y="74" width="12" height="12" fill="white" />
-      <rect x="17" y="17" width="6" height="6" fill="#000" />
-      <rect x="77" y="17" width="6" height="6" fill="#000" />
-      <rect x="17" y="77" width="6" height="6" fill="#000" />
-      <rect x="35" y="35" width="30" height="30" fill="none" stroke="#000" strokeWidth="2" rx="3" />
-      <text x="50" y="53" textAnchor="middle" fontSize="7" fontWeight="bold" fill="#22c55e">TH</text>
-    </svg>
-  );
-}
 
 export default function OrderPage() {
   return (
