@@ -126,29 +126,31 @@ function RegisterForm() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-white/60 mb-2">I want to...</label>
+              <label className="block text-sm font-medium text-white/60 mb-2">Account type</label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setForm({ ...form, role: "ATTENDEE" })}
-                  className={`p-3.5 border rounded-xl text-sm font-medium transition-all ${
+                  className={`p-4 border rounded-xl text-left transition-all ${
                     form.role === "ATTENDEE"
-                      ? "border-brand-500 bg-brand-500/10 text-brand-400"
-                      : "border-white/10 text-white/40 hover:border-white/20"
+                      ? "border-brand-500 bg-brand-500/10"
+                      : "border-white/10 hover:border-white/20"
                   }`}
                 >
-                  Buy Tickets
+                  <div className={`text-sm font-semibold mb-0.5 ${form.role === "ATTENDEE" ? "text-brand-400" : "text-white/60"}`}>Attendee</div>
+                  <div className="text-xs text-white/30">Find & buy tickets</div>
                 </button>
                 <button
                   type="button"
                   onClick={() => setForm({ ...form, role: "ORGANIZER" })}
-                  className={`p-3.5 border rounded-xl text-sm font-medium transition-all ${
+                  className={`p-4 border rounded-xl text-left transition-all ${
                     form.role === "ORGANIZER"
-                      ? "border-brand-500 bg-brand-500/10 text-brand-400"
-                      : "border-white/10 text-white/40 hover:border-white/20"
+                      ? "border-brand-500 bg-brand-500/10"
+                      : "border-white/10 hover:border-white/20"
                   }`}
                 >
-                  Sell Tickets
+                  <div className={`text-sm font-semibold mb-0.5 ${form.role === "ORGANIZER" ? "text-brand-400" : "text-white/60"}`}>Business</div>
+                  <div className="text-xs text-white/30">Create & sell events</div>
                 </button>
               </div>
             </div>
