@@ -23,6 +23,7 @@ interface EventDetail {
   title: string;
   description: string;
   shortDesc?: string;
+  coverImageUrl?: string | null;
   venue?: string;
   address?: string;
   city?: string;
@@ -91,7 +92,11 @@ export default function EventDetailPage() {
 
       <div className="max-w-5xl mx-auto px-6 py-10">
         {/* Event Hero */}
-        <div className="bg-gradient-to-br from-brand-500/20 to-brand-700/5 border border-brand-500/20 rounded-2xl p-8 md:p-12 mb-8">
+        <div className="bg-gradient-to-br from-brand-500/20 to-brand-700/5 border border-brand-500/20 rounded-2xl p-8 md:p-12 mb-8 relative overflow-hidden">
+          {event.coverImageUrl && (
+            <img src={event.coverImageUrl} alt={event.title} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+          )}
+          <div className="relative z-10">
           <div className="text-brand-400 text-sm font-medium mb-3 uppercase tracking-wider">{event.category}</div>
           <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">{event.title}</h1>
           {event.shortDesc && <p className="text-white/50 text-lg mb-6">{event.shortDesc}</p>}
@@ -114,6 +119,7 @@ export default function EventDetailPage() {
               <Users className="w-4 h-4 text-brand-400" />
               {event.totalCapacity} capacity
             </span>
+          </div>
           </div>
         </div>
 

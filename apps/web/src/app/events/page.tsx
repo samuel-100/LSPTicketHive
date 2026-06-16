@@ -10,7 +10,7 @@ interface Event {
   id: string;
   title: string;
   shortDesc?: string;
-  coverImageUrl?: string;
+  coverImageUrl?: string | null;
   venue?: string;
   city?: string;
   startDate: string;
@@ -113,8 +113,12 @@ export default function EventsPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
               <Link key={event.id} href={`/events/${event.id}`} className="group bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden hover:border-brand-500/30 transition-all duration-300">
-                <div className="h-48 bg-gradient-to-br from-brand-500/20 to-brand-700/10 flex items-center justify-center">
-                  <span className="text-brand-400/60 text-sm font-medium uppercase tracking-wider">{event.category || "Event"}</span>
+                <div className="h-48 bg-gradient-to-br from-brand-500/20 to-brand-700/10 flex items-center justify-center relative overflow-hidden">
+                  {event.coverImageUrl ? (
+                    <img src={event.coverImageUrl} alt={event.title} className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-brand-400/60 text-sm font-medium uppercase tracking-wider">{event.category || "Event"}</span>
+                  )}
                 </div>
                 <div className="p-5">
                   <h3 className="font-semibold text-lg text-white mb-1 group-hover:text-brand-400 transition-colors">{event.title}</h3>
