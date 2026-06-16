@@ -37,7 +37,8 @@ interface EventDetail {
   tags: string[];
   totalCapacity: number;
   ticketTypes: TicketType[];
-  organization: { name: string; slug: string };
+  organizationId: string;
+  organization: { id: string; name: string; slug: string };
 }
 
 export default function EventDetailPage() {
@@ -66,6 +67,26 @@ export default function EventDetailPage() {
   }
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+
+  useEffect(() => {
+    if (!event) return;
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    fetch(`${API_URL}/api/follow/check/${event.organization.id || ""}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(r => r.json()).then(d => { if (d.data) setIsFollowing(d.data.following); }).catch(() => {});
+  }, [event]);
+
+  async function toggleFollow() {
+    const token = localStorage.getItem("token");
+    if (!token) { window.location.href = "/login"; return; }
+    const orgId = (event as any)?.organizationId || (event as any)?.organization?.id;
+    if (!orgId) return;
+    const method = isFollowing ? "DELETE" : "POST";
+    await fetch(`${API_URL}/api/follow/${orgId}`, { method, headers: { Authorization: `Bearer ${token}` } });
+    setIsFollowing(!isFollowing);
+  }
 
   async function handleCheckout() {
     setCheckoutLoading(true);
@@ -177,13 +198,25 @@ export default function EventDetailPage() {
             {/* Organizer */}
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6">
               <h2 className="text-lg font-semibold text-white mb-3">Organized by</h2>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-brand-500/10 rounded-full flex items-center justify-center">
-                  <span className="text-brand-400 font-semibold">{event.organization.name[0]}</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-brand-500/10 rounded-full flex items-center justify-center">
+                    <span className="text-brand-400 font-semibold">{event.organization.name[0]}</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{event.organization.name}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-white font-medium">{event.organization.name}</p>
-                </div>
+                <button
+                  onClick={toggleFollow}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isFollowing
+                      ? "bg-brand-500/10 text-brand-400 border border-brand-500/20"
+                      : "bg-white/5 text-white/60 border border-white/10 hover:border-brand-500/30"
+                  }`}
+                >
+                  {isFollowing ? "Following" : "Follow"}
+                </button>
               </div>
             </div>
           </div>
