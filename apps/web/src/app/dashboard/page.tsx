@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Ticket, Calendar, TrendingUp, LogOut } from "lucide-react";
+import { Plus, Ticket, Calendar, TrendingUp, LogOut, Banknote, QrCode } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -21,6 +21,8 @@ export default function DashboardPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [user, setUser] = useState<{ firstName: string; role: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [stripeConnected, setStripeConnected] = useState(false);
+  const [connectingStripe, setConnectingStripe] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -40,6 +42,7 @@ export default function DashboardPage() {
       });
       const data = await res.json();
       if (data.data) {
+        if (data.data.stripeAccountId) setStripeConnected(true);
         const eventsRes = await fetch(`${API_URL}/api/events?orgId=${data.data.id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -52,6 +55,24 @@ export default function DashboardPage() {
       // org not created yet
     }
     setLoading(false);
+  }
+
+  async function connectStripe() {
+    setConnectingStripe(true);
+    const token = localStorage.getItem("token");
+    try {
+      const res = await fetch(`${API_URL}/api/organizations/connect-stripe`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.data?.url) {
+        window.location.href = data.data.url;
+      }
+    } catch {
+      alert("Failed to connect Stripe");
+    }
+    setConnectingStripe(false);
   }
 
   function handleLogout() {
@@ -92,6 +113,30 @@ export default function DashboardPage() {
             Welcome back{user ? `, ${user.firstName}` : ""} 👋
           </h1>
           <p className="text-white/40">Here&apos;s your event overview</p>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-wrap gap-3 mb-8">
+          {!stripeConnected && (
+            <button
+              onClick={connectStripe}
+              disabled={connectingStripe}
+              className="flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-3 rounded-xl text-sm font-medium text-white hover:border-brand-500/30 transition-colors"
+            >
+              <Banknote className="w-4 h-4 text-brand-400" />
+              {connectingStripe ? "Connecting..." : "Connect Bank Account"}
+            </button>
+          )}
+          {stripeConnected && (
+            <div className="flex items-center gap-2 bg-brand-500/10 border border-brand-500/20 px-5 py-3 rounded-xl text-sm font-medium text-brand-400">
+              <Banknote className="w-4 h-4" />
+              Bank Connected
+            </div>
+          )}
+          <Link href="/dashboard/scan" className="flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-3 rounded-xl text-sm font-medium text-white hover:border-brand-500/30 transition-colors">
+            <QrCode className="w-4 h-4 text-brand-400" />
+            Scan Tickets
+          </Link>
         </div>
 
         {/* Stats */}

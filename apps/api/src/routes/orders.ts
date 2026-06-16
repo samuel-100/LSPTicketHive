@@ -115,7 +115,7 @@ ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
       },
     });
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
@@ -128,11 +128,18 @@ ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
         items: JSON.stringify(orderItems),
       },
       payment_intent_data: {
-        metadata: {
-          orderId: order.id,
-        },
+        metadata: { orderId: order.id },
       },
-    });
+    };
+
+    if (event.organization.stripeAccountId) {
+      sessionParams.payment_intent_data.application_fee_amount = Math.round(platformFee * 100);
+      sessionParams.payment_intent_data.transfer_data = {
+        destination: event.organization.stripeAccountId,
+      };
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     res.json({ success: true, data: { orderId: order.id, checkoutUrl: session.url } });
   } catch (err) {
