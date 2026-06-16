@@ -33,7 +33,7 @@ ordersRouter.post("/checkout", authenticate, async (req: AuthRequest, res) => {
     const lineItems: { ticketTypeId: string; quantity: number; price: number; name: string }[] = [];
 
     for (const item of input.items) {
-      const ticketType = event.ticketTypes.find(t => t.id === item.ticketTypeId);
+      const ticketType = event.ticketTypes.find((t: any) => t.id === item.ticketTypeId);
       if (!ticketType) return res.status(400).json({ success: false, error: `Ticket type ${item.ticketTypeId} not found` });
 
       const available = ticketType.quantity - ticketType.sold;

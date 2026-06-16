@@ -8,6 +8,7 @@ import { ordersRouter } from "./routes/orders";
 import { webhooksRouter } from "./routes/webhooks";
 import { organizationsRouter } from "./routes/organizations";
 import { checkInRouter } from "./routes/checkin";
+import { uploadRouter } from "./routes/upload";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -25,6 +26,7 @@ app.use("/api/events", eventsRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/organizations", organizationsRouter);
 app.use("/api/checkin", checkInRouter);
+app.use("/api/upload", uploadRouter);
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });

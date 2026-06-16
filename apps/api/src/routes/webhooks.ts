@@ -33,7 +33,7 @@ webhooksRouter.post("/stripe", raw({ type: "application/json" }), async (req, re
       const lineItems = JSON.parse(items);
 
       // Create tickets and update order status
-      await prisma.$transaction(async (tx) => {
+      await prisma.$transaction(async (tx: any) => {
         await tx.order.update({
           where: { id: order.id },
           data: { status: "COMPLETED" },

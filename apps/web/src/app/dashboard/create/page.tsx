@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Ticket, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Ticket, Plus, Trash2, Upload, Image } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -19,6 +19,9 @@ export default function CreateEventPage() {
   const [token, setToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [coverImage, setCoverImage] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -80,6 +83,32 @@ export default function CreateEventPage() {
     return createData.success;
   }
 
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const res = await fetch(`${API_URL}/api/upload/presign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ contentType: file.type, fileExtension: ext }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+
+      await fetch(data.data.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      setCoverImage(data.data.publicUrl);
+    } catch (err) {
+      console.error("Upload failed:", err);
+    }
+    setUploading(false);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
@@ -94,6 +123,7 @@ export default function CreateEventPage() {
 
     const payload = {
       ...form,
+      coverImageUrl: coverImage || undefined,
       startDate: new Date(form.startDate).toISOString(),
       endDate: new Date(form.endDate).toISOString(),
       totalCapacity: Number(form.totalCapacity),
@@ -206,6 +236,38 @@ export default function CreateEventPage() {
                   <option value="Other">Other</option>
                 </select>
               </div>
+            </div>
+          </section>
+
+          {/* Cover Image */}
+          <section>
+            <h2 className="text-xl font-semibold text-white mb-4">Cover Image</h2>
+            <div className="relative">
+              {coverImage ? (
+                <div className="relative rounded-xl overflow-hidden h-48">
+                  <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setCoverImage("")}
+                    className="absolute top-3 right-3 bg-black/60 text-white p-2 rounded-lg hover:bg-black/80 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-brand-500/30 transition-colors">
+                  {uploading ? (
+                    <span className="text-white/40 text-sm">Uploading...</span>
+                  ) : (
+                    <>
+                      <Image className="w-8 h-8 text-white/20 mb-2" />
+                      <span className="text-white/40 text-sm">Click to upload cover image</span>
+                      <span className="text-white/20 text-xs mt-1">JPG, PNG up to 5MB</span>
+                    </>
+                  )}
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                </label>
+              )}
             </div>
           </section>
 
