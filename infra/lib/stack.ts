@@ -57,7 +57,6 @@ export class LSPTicketHiveStack extends cdk.Stack {
 
     // S3 bucket for event images
     const imagesBucket = new s3.Bucket(this, "ImagesBucket", {
-      bucketName: `lsp-tickethive-images-${this.account}`,
       cors: [{
         allowedOrigins: ["*"],
         allowedMethods: [s3.HttpMethods.GET, s3.HttpMethods.PUT],
