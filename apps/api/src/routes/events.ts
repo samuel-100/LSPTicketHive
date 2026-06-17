@@ -127,6 +127,35 @@ eventsRouter.post("/", authenticate, async (req: AuthRequest, res) => {
   }
 });
 
+// Organizer: update event
+eventsRouter.patch("/:id", authenticate, async (req: AuthRequest, res) => {
+  const org = await prisma.organization.findUnique({ where: { ownerId: req.user!.userId } });
+  if (!org) return res.status(403).json({ success: false, error: "Not authorized" });
+
+  const { title, description, shortDesc, venue, city, country, category, startDate, endDate, totalCapacity } = req.body;
+
+  const event = await prisma.event.findFirst({ where: { id: req.params.id, organizationId: org.id } });
+  if (!event) return res.status(404).json({ success: false, error: "Event not found" });
+
+  const updated = await prisma.event.update({
+    where: { id: req.params.id },
+    data: {
+      ...(title && { title }),
+      ...(description && { description }),
+      ...(shortDesc !== undefined && { shortDesc }),
+      ...(venue !== undefined && { venue }),
+      ...(city !== undefined && { city }),
+      ...(country !== undefined && { country }),
+      ...(category && { category }),
+      ...(startDate && { startDate: new Date(startDate) }),
+      ...(endDate && { endDate: new Date(endDate) }),
+      ...(totalCapacity && { totalCapacity: Number(totalCapacity) }),
+    },
+  });
+
+  res.json({ success: true, data: updated });
+});
+
 // Organizer: publish event
 eventsRouter.patch("/:id/publish", authenticate, async (req: AuthRequest, res) => {
   const org = await prisma.organization.findUnique({ where: { ownerId: req.user!.userId } });

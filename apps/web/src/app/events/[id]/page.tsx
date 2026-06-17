@@ -360,9 +360,9 @@ export default function EventDetailPage() {
                   <Link href="/dashboard/scan" className="w-full flex items-center justify-center gap-2 bg-brand-500 text-black py-3 rounded-xl text-sm font-semibold hover:bg-brand-400 transition-colors">
                     Scan Tickets
                   </Link>
-                  <button className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
+                  <Link href={`/events/${params.id}/edit`} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
                     Edit Event
-                  </button>
+                  </Link>
                   <button onClick={() => { navigator.clipboard.writeText(window.location.href); alert("Link copied!"); }} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
                     Share Link
                   </button>
