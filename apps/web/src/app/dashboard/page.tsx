@@ -31,7 +31,12 @@ export default function DashboardPage() {
       router.push("/login");
       return;
     }
-    setUser(JSON.parse(stored));
+    const parsedUser = JSON.parse(stored);
+    if (parsedUser.role !== "ORGANIZER") {
+      router.push("/events");
+      return;
+    }
+    setUser(parsedUser);
     fetchMyEvents(token);
   }, [router]);
 

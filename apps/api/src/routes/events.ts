@@ -75,6 +75,9 @@ eventsRouter.get("/:id", async (req, res) => {
 
 // Organizer: create event
 eventsRouter.post("/", authenticate, async (req: AuthRequest, res) => {
+  if (req.user!.role !== "ORGANIZER" && req.user!.role !== "ADMIN") {
+    return res.status(403).json({ success: false, error: "Only business accounts can create events. Switch to a business account in your profile." });
+  }
   try {
     const input = createEventSchema.parse(req.body);
 
