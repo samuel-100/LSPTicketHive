@@ -11,30 +11,34 @@ export default function Navbar() {
   const [user, setUser] = useState<{ firstName: string; role: string } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [location, setLocation] = useState("Detecting...");
+  const [location, setLocation] = useState("");
+  const [locationOpen, setLocationOpen] = useState(false);
+  const [detecting, setDetecting] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
     if (stored) setUser(JSON.parse(stored));
+  }, []);
 
-    // Auto-detect location
+  function detectLocation() {
+    setDetecting(true);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (pos) => {
           try {
             const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${pos.coords.latitude}&longitude=${pos.coords.longitude}&localityLanguage=en`);
             const data = await res.json();
-            setLocation(data.city || data.locality || "Dublin");
+            setLocation(data.city || data.locality || "");
           } catch {
-            setLocation("Dublin");
+            setLocation("");
           }
+          setDetecting(false);
+          setLocationOpen(false);
         },
-        () => setLocation("Dublin")
+        () => { setDetecting(false); setLocationOpen(false); }
       );
-    } else {
-      setLocation("Dublin");
     }
-  }, []);
+  }
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -77,15 +81,46 @@ export default function Navbar() {
                 className="bg-transparent text-sm text-white placeholder:text-white/25 outline-none w-full py-2.5"
               />
             </div>
-            <div className="flex items-center gap-1.5 px-3 border-l border-white/[0.06] relative">
-              <MapPin className="w-3.5 h-3.5 text-brand-400 shrink-0" />
-              <input
-                type="text"
-                value={location}
-                onChange={e => setLocation(e.target.value)}
-                placeholder="City"
-                className="bg-transparent text-sm text-white/50 outline-none w-24 placeholder:text-white/25"
-              />
+            <div className="relative border-l border-white/[0.06]">
+              <button
+                type="button"
+                onClick={() => setLocationOpen(!locationOpen)}
+                className="flex items-center gap-1.5 px-3 py-2.5"
+              >
+                <MapPin className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+                <span className="text-sm text-white/50 whitespace-nowrap">{location || "Choose location"}</span>
+              </button>
+              {locationOpen && (
+                <div className="absolute top-full right-0 mt-2 w-64 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                  <button
+                    onClick={detectLocation}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
+                  >
+                    <svg className="w-5 h-5 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/><circle cx="12" cy="12" r="8"/></svg>
+                    <span className="text-sm text-white">{detecting ? "Detecting..." : "Use my current location"}</span>
+                  </button>
+                  <button
+                    onClick={() => { setLocation(""); setLocationOpen(false); router.push("/events"); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left border-t border-white/5"
+                  >
+                    <svg className="w-5 h-5 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M12 17v4m-4 0h8"/></svg>
+                    <span className="text-sm text-white">Browse online events</span>
+                  </button>
+                  <div className="border-t border-white/5">
+                    <div className="px-4 py-2 text-xs text-white/20">Popular cities</div>
+                    {["Dublin", "London", "Belfast", "Lagos", "New York", "Berlin", "Paris", "Accra"].map(c => (
+                      <button
+                        key={c}
+                        onClick={() => { setLocation(c); setLocationOpen(false); }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors text-left"
+                      >
+                        <svg className="w-4 h-4 text-white/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        <span className="text-sm text-white/60">{c}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <button type="submit" className="bg-brand-500 p-2 rounded-full m-1 hover:bg-brand-400 transition-colors">
               <Search className="w-4 h-4 text-black" />

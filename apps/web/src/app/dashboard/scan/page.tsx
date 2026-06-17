@@ -16,8 +16,9 @@ export default function ScanPage() {
 
   useEffect(() => {
     const t = localStorage.getItem("token");
-    if (!t) { router.push("/login"); return; }
-    setToken(t);
+    const u = localStorage.getItem("user");
+    if (!t && !u) { router.push("/login"); return; }
+    if (t) setToken(t);
   }, [router]);
 
   async function handleScan(code?: string) {
@@ -27,9 +28,12 @@ export default function ScanPage() {
     setResult(null);
 
     try {
+      const headers: any = { "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
       const res = await fetch(`${API_URL}/api/checkin/scan`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers,
+        credentials: "include",
         body: JSON.stringify({ qrCode: qr }),
       });
       const data = await res.json();
