@@ -69,6 +69,10 @@ export default function EventDetailPage() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [attendees, setAttendees] = useState<any[]>([]);
+  const [followers, setFollowers] = useState<any[]>([]);
+  const [checkedInCount, setCheckedInCount] = useState(0);
+  const [showTab, setShowTab] = useState<"stats" | "attendees" | "followers">("stats");
 
   useEffect(() => {
     if (!event) return;
@@ -83,6 +87,23 @@ export default function EventDetailPage() {
     }).then(r => r.json()).then(d => {
       if (d.data && d.data.id === event.organizationId) {
         setIsOwner(true);
+        // Fetch attendees
+        fetch(`${API_URL}/api/events/${params.id}/attendees`, {
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
+        }).then(r => r.json()).then(a => {
+          if (a.data) {
+            setAttendees(a.data.attendees || []);
+            setCheckedInCount(a.data.checkedIn || 0);
+          }
+        }).catch(() => {});
+        // Fetch followers
+        fetch(`${API_URL}/api/events/${params.id}/followers`, {
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
+        }).then(r => r.json()).then(f => {
+          if (f.data) setFollowers(f.data.followers || []);
+        }).catch(() => {});
       }
     }).catch(() => {});
 
@@ -239,52 +260,111 @@ export default function EventDetailPage() {
           <div className="md:col-span-1">
             {isOwner ? (
               <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 sticky top-20">
-                <h2 className="text-xl font-semibold text-white mb-5">Event Management</h2>
+                <h2 className="text-lg font-semibold text-white mb-4">Event Management</h2>
 
-                {/* Stats */}
-                <div className="space-y-3 mb-6">
-                  {event.ticketTypes.map(tt => {
-                    const pct = tt.quantity > 0 ? Math.round((tt.sold / tt.quantity) * 100) : 0;
-                    return (
-                      <div key={tt.id} className="border border-white/5 rounded-xl p-3">
-                        <div className="flex justify-between text-sm mb-1">
-                          <span className="text-white">{tt.name}</span>
-                          <span className="text-white/40">{tt.sold}/{tt.quantity} sold</span>
+                {/* Tabs */}
+                <div className="flex gap-1 mb-5 bg-white/5 rounded-lg p-1">
+                  <button onClick={() => setShowTab("stats")} className={`flex-1 text-xs py-2 rounded-md font-medium transition-colors ${showTab === "stats" ? "bg-brand-500 text-black" : "text-white/40"}`}>Stats</button>
+                  <button onClick={() => setShowTab("attendees")} className={`flex-1 text-xs py-2 rounded-md font-medium transition-colors ${showTab === "attendees" ? "bg-brand-500 text-black" : "text-white/40"}`}>Buyers ({attendees.length})</button>
+                  <button onClick={() => setShowTab("followers")} className={`flex-1 text-xs py-2 rounded-md font-medium transition-colors ${showTab === "followers" ? "bg-brand-500 text-black" : "text-white/40"}`}>Followers ({followers.length})</button>
+                </div>
+
+                {/* Stats Tab */}
+                {showTab === "stats" && (
+                  <>
+                    <div className="space-y-3 mb-4">
+                      {event.ticketTypes.map(tt => {
+                        const pct = tt.quantity > 0 ? Math.round((tt.sold / tt.quantity) * 100) : 0;
+                        return (
+                          <div key={tt.id} className="border border-white/5 rounded-lg p-2.5">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-white">{tt.name}</span>
+                              <span className="text-white/40">{tt.sold}/{tt.quantity}</span>
+                            </div>
+                            <div className="w-full bg-white/5 rounded-full h-1.5">
+                              <div className="bg-brand-500 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="border-t border-white/5 pt-3 mb-4 space-y-1.5">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/40">Tickets sold</span>
+                        <span className="text-white font-medium">{event.ticketTypes.reduce((s, t) => s + t.sold, 0)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/40">Checked in</span>
+                        <span className="text-white font-medium">{checkedInCount}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/40">Revenue</span>
+                        <span className="text-brand-400 font-medium">€{event.ticketTypes.reduce((s, t) => s + t.sold * t.price, 0).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-white/40">Followers</span>
+                        <span className="text-white">{followers.length}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Attendees Tab */}
+                {showTab === "attendees" && (
+                  <div className="max-h-64 overflow-y-auto space-y-2 mb-4">
+                    {attendees.length === 0 ? (
+                      <p className="text-xs text-white/30 text-center py-4">No tickets sold yet</p>
+                    ) : attendees.map((a: any) => (
+                      <div key={a.id} className="flex items-center gap-3 p-2 rounded-lg border border-white/5">
+                        <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center shrink-0">
+                          {a.user.avatarUrl ? (
+                            <img src={a.user.avatarUrl} className="w-full h-full rounded-full object-cover" alt="" />
+                          ) : (
+                            <span className="text-xs text-brand-400 font-bold">{a.user.firstName?.[0]}</span>
+                          )}
                         </div>
-                        <div className="w-full bg-white/5 rounded-full h-1.5">
-                          <div className="bg-brand-500 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-white font-medium truncate">{a.user.firstName} {a.user.lastName}</div>
+                          <div className="text-[10px] text-white/30 truncate">{a.ticketType} · {a.status === "USED" ? "✓ Checked in" : "Valid"}</div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
+                )}
 
-                {/* Total stats */}
-                <div className="border-t border-white/5 pt-4 mb-6 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Total tickets sold</span>
-                    <span className="text-white font-medium">{event.ticketTypes.reduce((s, t) => s + t.sold, 0)}</span>
+                {/* Followers Tab */}
+                {showTab === "followers" && (
+                  <div className="max-h-64 overflow-y-auto space-y-2 mb-4">
+                    {followers.length === 0 ? (
+                      <p className="text-xs text-white/30 text-center py-4">No followers yet</p>
+                    ) : followers.map((f: any) => (
+                      <div key={f.id} className="flex items-center gap-3 p-2 rounded-lg border border-white/5">
+                        <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center shrink-0">
+                          {f.avatarUrl ? (
+                            <img src={f.avatarUrl} className="w-full h-full rounded-full object-cover" alt="" />
+                          ) : (
+                            <span className="text-xs text-brand-400 font-bold">{f.firstName?.[0]}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-white font-medium truncate">{f.firstName} {f.lastName}</div>
+                          <div className="text-[10px] text-white/30 truncate">{f.email}</div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Revenue</span>
-                    <span className="text-brand-400 font-medium">€{event.ticketTypes.reduce((s, t) => s + t.sold * t.price, 0).toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Capacity</span>
-                    <span className="text-white">{event.ticketTypes.reduce((s, t) => s + t.sold, 0)}/{event.totalCapacity}</span>
-                  </div>
-                </div>
+                )}
 
                 {/* Actions */}
-                <div className="space-y-2">
-                  <Link href="/dashboard/scan" className="w-full flex items-center justify-center gap-2 bg-brand-500 text-black py-3 rounded-xl font-semibold hover:bg-brand-400 transition-colors">
+                <div className="space-y-2 border-t border-white/5 pt-4">
+                  <Link href="/dashboard/scan" className="w-full flex items-center justify-center gap-2 bg-brand-500 text-black py-3 rounded-xl text-sm font-semibold hover:bg-brand-400 transition-colors">
                     Scan Tickets
                   </Link>
-                  <button className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-3 rounded-xl font-medium hover:bg-white/10 transition-colors">
+                  <button className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
                     Edit Event
                   </button>
-                  <button className="w-full flex items-center justify-center gap-2 text-white/30 py-2 text-sm hover:text-red-400 transition-colors">
-                    Cancel Event
+                  <button onClick={() => { navigator.clipboard.writeText(window.location.href); alert("Link copied!"); }} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
+                    Share Link
                   </button>
                 </div>
               </div>

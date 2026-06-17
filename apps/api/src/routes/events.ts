@@ -155,6 +155,63 @@ eventsRouter.get("/my/events", authenticate, async (req: AuthRequest, res) => {
   res.json({ success: true, data: events });
 });
 
+// Organizer: get event attendees (who bought tickets)
+eventsRouter.get("/:id/attendees", authenticate, async (req: AuthRequest, res) => {
+  const org = await prisma.organization.findUnique({ where: { ownerId: req.user!.userId } });
+  if (!org) return res.status(403).json({ success: false, error: "Not authorized" });
+
+  const event = await prisma.event.findFirst({ where: { id: req.params.id, organizationId: org.id } });
+  if (!event) return res.status(404).json({ success: false, error: "Event not found" });
+
+  const tickets = await prisma.ticket.findMany({
+    where: { ticketType: { eventId: event.id } },
+    include: {
+      user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+      ticketType: { select: { name: true, price: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const checkedIn = tickets.filter((t: any) => t.status === "USED").length;
+
+  res.json({
+    success: true,
+    data: {
+      total: tickets.length,
+      checkedIn,
+      attendees: tickets.map((t: any) => ({
+        id: t.id,
+        user: t.user,
+        ticketType: t.ticketType.name,
+        price: t.ticketType.price,
+        status: t.status,
+        checkedInAt: t.checkedInAt,
+        createdAt: t.createdAt,
+      })),
+    },
+  });
+});
+
+// Organizer: get followers
+eventsRouter.get("/:id/followers", authenticate, async (req: AuthRequest, res) => {
+  const org = await prisma.organization.findUnique({ where: { ownerId: req.user!.userId } });
+  if (!org) return res.status(403).json({ success: false, error: "Not authorized" });
+
+  const followers = await prisma.follow.findMany({
+    where: { organizationId: org.id },
+    include: { user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true, createdAt: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.json({
+    success: true,
+    data: {
+      total: followers.length,
+      followers: followers.map((f: any) => ({ ...f.user, followedAt: f.createdAt })),
+    },
+  });
+});
+
 async function notifyFollowers(orgId: string, orgName: string, eventId: string, eventTitle: string, startDate: Date, venue: string) {
   const followers = await prisma.follow.findMany({
     where: { organizationId: orgId },
