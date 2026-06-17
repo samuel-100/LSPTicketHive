@@ -178,13 +178,34 @@ export default function ScanPage() {
               )}
             </div>
             <h3 className={`text-xl font-bold mb-1 ${result.success ? "text-brand-400" : "text-red-400"}`}>
-              {result.success ? "Valid Ticket ✓" : "Invalid"}
+              {result.success ? "Checked In ✓" : "Invalid"}
             </h3>
             <p className="text-white/40">{result.message}</p>
             {result.ticket && (
-              <div className="mt-3 text-sm text-white/30">
-                <p className="font-medium text-white/50">{result.ticket.attendee?.firstName} {result.ticket.attendee?.lastName}</p>
-                <p>{result.ticket.ticketType} — {result.ticket.eventTitle}</p>
+              <div className="mt-4 bg-white/5 rounded-xl p-4 text-left">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center">
+                    <span className="text-brand-400 font-bold text-sm">{result.ticket.attendee?.firstName?.[0]}</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">{result.ticket.attendee?.firstName} {result.ticket.attendee?.lastName}</p>
+                    <p className="text-white/30 text-xs">{result.ticket.attendee?.email}</p>
+                  </div>
+                </div>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-white/40">Ticket</span>
+                    <span className="text-white">{result.ticket.ticketType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/40">Event</span>
+                    <span className="text-white">{result.ticket.eventTitle}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-white/40">Scanned at</span>
+                    <span className="text-brand-400">{result.ticket.scanTime}</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
