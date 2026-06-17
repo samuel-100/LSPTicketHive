@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Image, Trash2 } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -15,6 +15,8 @@ export default function EditEventPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  const [coverImage, setCoverImage] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -34,6 +36,7 @@ export default function EditEventPage() {
       .then(data => {
         if (data.data) {
           const e = data.data;
+          setCoverImage(e.coverImageUrl || "");
           setForm({
             title: e.title || "",
             description: e.description || "",
@@ -64,6 +67,7 @@ export default function EditEventPage() {
         credentials: "include",
         body: JSON.stringify({
           ...form,
+          coverImageUrl: coverImage || undefined,
           startDate: new Date(form.startDate).toISOString(),
           endDate: new Date(form.endDate).toISOString(),
           totalCapacity: Number(form.totalCapacity),
@@ -98,6 +102,41 @@ export default function EditEventPage() {
         {success && <div className="bg-brand-500/10 border border-brand-500/20 text-brand-400 p-4 rounded-xl mb-6 text-sm">Event updated! Redirecting...</div>}
 
         <form onSubmit={handleSave} className="space-y-6">
+          {/* Cover Image */}
+          <div>
+            <label className="block text-sm font-medium text-white/60 mb-2">Cover Image</label>
+            {coverImage ? (
+              <div className="relative rounded-xl overflow-hidden h-44">
+                <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
+                <button type="button" onClick={() => setCoverImage("")} className="absolute top-3 right-3 bg-black/60 text-white p-2 rounded-lg hover:bg-black/80 transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <label className="flex flex-col items-center justify-center h-36 border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-brand-500/30 transition-colors">
+                {uploading ? (
+                  <span className="text-white/40 text-sm">Uploading...</span>
+                ) : (
+                  <>
+                    <Image className="w-7 h-7 text-white/20 mb-2" />
+                    <span className="text-white/40 text-sm">Click to upload new image</span>
+                  </>
+                )}
+                <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploading(true);
+                  const token = localStorage.getItem("token");
+                  const ext = file.name.split(".").pop() || "jpg";
+                  const res = await fetch(`${API_URL}/api/upload/presign`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, credentials: "include", body: JSON.stringify({ contentType: file.type, fileExtension: ext }) });
+                  const data = await res.json();
+                  if (data.success) { await fetch(data.data.uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file }); setCoverImage(data.data.publicUrl); }
+                  setUploading(false);
+                }} />
+              </label>
+            )}
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-white/60 mb-2">Event Title</label>
             <input type="text" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-brand-500 transition-colors" />

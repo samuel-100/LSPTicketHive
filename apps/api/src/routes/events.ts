@@ -132,7 +132,7 @@ eventsRouter.patch("/:id", authenticate, async (req: AuthRequest, res) => {
   const org = await prisma.organization.findUnique({ where: { ownerId: req.user!.userId } });
   if (!org) return res.status(403).json({ success: false, error: "Not authorized" });
 
-  const { title, description, shortDesc, venue, city, country, category, startDate, endDate, totalCapacity } = req.body;
+  const { title, description, shortDesc, venue, city, country, category, startDate, endDate, totalCapacity, coverImageUrl } = req.body;
 
   const event = await prisma.event.findFirst({ where: { id: req.params.id, organizationId: org.id } });
   if (!event) return res.status(404).json({ success: false, error: "Event not found" });
@@ -150,6 +150,7 @@ eventsRouter.patch("/:id", authenticate, async (req: AuthRequest, res) => {
       ...(startDate && { startDate: new Date(startDate) }),
       ...(endDate && { endDate: new Date(endDate) }),
       ...(totalCapacity && { totalCapacity: Number(totalCapacity) }),
+      ...(coverImageUrl !== undefined && { coverImageUrl }),
     },
   });
 
