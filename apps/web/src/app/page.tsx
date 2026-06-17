@@ -70,59 +70,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Stats + Trust */}
-      <section className="py-16 px-6 border-t border-white/5">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-            <div>
-              <div className="text-3xl font-bold text-brand-400 mb-1">10K+</div>
-              <div className="text-sm text-white/40">Events hosted</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-brand-400 mb-1">50K+</div>
-              <div className="text-sm text-white/40">Tickets sold</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-brand-400 mb-1">2%</div>
-              <div className="text-sm text-white/40">Platform fee</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-brand-400 mb-1">24hr</div>
-              <div className="text-sm text-white/40">Payout speed</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="py-16 px-6 border-t border-white/5">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl font-bold text-white text-center mb-10">Start in 3 steps</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-14 h-14 bg-brand-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-brand-400 text-xl font-bold">1</span>
-              </div>
-              <h4 className="font-semibold text-white mb-2">Create your event</h4>
-              <p className="text-sm text-white/40">Add details, upload a flyer, set ticket prices. Takes 2 minutes.</p>
-            </div>
-            <div className="text-center">
-              <div className="w-14 h-14 bg-brand-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-brand-400 text-xl font-bold">2</span>
-              </div>
-              <h4 className="font-semibold text-white mb-2">Share & sell</h4>
-              <p className="text-sm text-white/40">Share your link. We handle payments, refunds, and notifications.</p>
-            </div>
-            <div className="text-center">
-              <div className="w-14 h-14 bg-brand-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <span className="text-brand-400 text-xl font-bold">3</span>
-              </div>
-              <h4 className="font-semibold text-white mb-2">Get paid next day</h4>
-              <p className="text-sm text-white/40">Money goes straight to your bank. Only 2% fee. No hidden costs.</p>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* CTA */}
       <section className="py-16 px-6">
