@@ -97,7 +97,9 @@ export default function Navbar() {
               <NavLink href="/dashboard/create" active={isActive("/dashboard/create")}>Create</NavLink>
               <NavLink href="/tickets" active={isActive("/tickets")}>Tickets</NavLink>
               <NavLink href="/dashboard" active={isActive("/dashboard")}>Dashboard</NavLink>
-              <span className="text-sm text-white/40 px-2">{user.firstName}</span>
+              <Link href="/profile" className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center text-brand-400 text-xs font-bold hover:bg-brand-500/20 transition-colors ml-2">
+                {user.firstName?.[0]}
+              </Link>
               <button onClick={handleLogout} className="text-xs text-white/30 hover:text-white transition-colors px-2">
                 Log out
               </button>

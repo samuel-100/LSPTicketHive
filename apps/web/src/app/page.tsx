@@ -13,10 +13,6 @@ export default function HomePage() {
       <section className="pt-16 pb-12 px-6 relative overflow-hidden">
         <HeroScene />
         <div className="max-w-5xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 bg-brand-500/10 border border-brand-500/20 rounded-full px-4 py-1.5 mb-6">
-            <Zap className="w-4 h-4 text-brand-400" />
-            <span className="text-sm font-medium text-brand-400">Only 2% platform fee — lowest in industry</span>
-          </div>
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight tracking-tight">
             Events that bring<br />
             <span className="text-brand-400">people together</span>

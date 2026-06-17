@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { Calendar, MapPin, Search } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Calendar, MapPin, Search, Map } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -15,25 +16,30 @@ interface Event {
   city?: string;
   startDate: string;
   category?: string;
-  ticketTypes: { price: number }[];
+  ticketTypes: { price: number; sold: number; quantity: number }[];
   organization: { name: string };
 }
 
-export default function EventsPage() {
+function EventsContent() {
+  const searchParams = useSearchParams();
   const [events, setEvents] = useState<Event[]>([]);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [city, setCity] = useState(searchParams.get("city") || "");
+  const [category, setCategory] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchEvents();
   }, []);
 
-  async function fetchEvents(query?: string) {
+  async function fetchEvents(query?: string, filterCity?: string, filterCat?: string) {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (query) params.set("search", query);
-      const res = await fetch(`${API_URL}/api/events?${params}`);
+      if (query || search) params.set("search", query || search);
+      if (filterCity || city) params.set("city", filterCity || city);
+      if (filterCat || category) params.set("category", filterCat || category);
+      const res = await fetch(`${API_URL}/api/events?${params}`, { credentials: "include" });
       const data = await res.json();
       setEvents(data.data?.items || []);
     } catch {
@@ -44,90 +50,154 @@ export default function EventsPage() {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    fetchEvents(search);
+    fetchEvents(search, city, category);
+  }
+
+  function selectCategory(cat: string) {
+    setCategory(cat === category ? "" : cat);
+    fetchEvents(search, city, cat === category ? "" : cat);
   }
 
   const getMinPrice = (event: Event) => {
     const prices = event.ticketTypes.map(t => t.price);
     const min = Math.min(...prices);
-    return min === 0 ? "Free" : `From €${min.toFixed(2)}`;
+    return min === 0 ? "Free" : `€${min}`;
   };
+
+  const getStatus = (event: Event) => {
+    const totalQty = event.ticketTypes.reduce((s, t) => s + t.quantity, 0);
+    const totalSold = event.ticketTypes.reduce((s, t) => s + t.sold, 0);
+    const pct = totalQty > 0 ? totalSold / totalQty : 0;
+    if (pct > 0.9) return "Almost full";
+    if (pct > 0.7) return "Going fast";
+    return null;
+  };
+
+  const categories = ["Music", "Nightlife", "Food & Drink", "Tech", "Comedy", "Arts", "Sports", "Business"];
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        {/* Title + Search */}
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold text-white mb-2">Browse Events</h1>
-          <p className="text-white/40 mb-6">Discover amazing events happening near you</p>
-          <form onSubmit={handleSearch}>
-            <div className="flex gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-3.5 w-5 h-5 text-white/20" />
-                <input
-                  type="text"
-                  placeholder="Search events, venues, cities..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 transition-colors"
-                />
-              </div>
-              <button type="submit" className="bg-brand-500 text-black px-6 py-3.5 rounded-xl font-semibold hover:bg-brand-400 transition-colors">
-                Search
-              </button>
-            </div>
-          </form>
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-white">
+            {city ? `Events in ${city}` : "All Events"}
+          </h1>
+          <p className="text-white/40 text-sm mt-1">Find something you love in your area</p>
         </div>
 
-        {/* Events Grid */}
-        {loading ? (
-          <div className="text-center py-20 text-white/30">Loading events...</div>
-        ) : events.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Calendar className="w-8 h-8 text-white/20" />
+        <div className="flex gap-8">
+          {/* Filters Sidebar */}
+          <aside className="hidden lg:block w-52 shrink-0">
+            <div className="sticky top-20 space-y-6">
+              {/* Category */}
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-3">Category</h3>
+                <ul className="space-y-2">
+                  {categories.map(cat => (
+                    <li key={cat}>
+                      <button
+                        onClick={() => selectCategory(cat)}
+                        className={`text-sm transition-colors ${category === cat ? "text-brand-400 font-medium" : "text-white/40 hover:text-white/60"}`}
+                      >
+                        {cat}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Date */}
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-3">Date</h3>
+                <ul className="space-y-2 text-sm text-white/40">
+                  <li><button className="hover:text-white/60">Today</button></li>
+                  <li><button className="hover:text-white/60">Tomorrow</button></li>
+                  <li><button className="hover:text-white/60">This weekend</button></li>
+                  <li><button className="hover:text-white/60">This month</button></li>
+                </ul>
+              </div>
+
+              {/* Price */}
+              <div>
+                <h3 className="text-sm font-semibold text-white mb-3">Price</h3>
+                <ul className="space-y-2 text-sm text-white/40">
+                  <li><button className="hover:text-white/60">Free</button></li>
+                  <li><button className="hover:text-white/60">Paid</button></li>
+                </ul>
+              </div>
             </div>
-            <h3 className="text-lg font-medium text-white/60 mb-2">No events yet</h3>
-            <p className="text-white/30 mb-6">Be the first to create an event on LSPTicketHive</p>
-            <Link href="/register?role=organizer" className="inline-flex bg-brand-500 text-black px-6 py-3 rounded-xl font-semibold hover:bg-brand-400 transition-colors">
-              Create Event
-            </Link>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map((event) => (
-              <Link key={event.id} href={`/events/${event.id}`} className="group bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden hover:border-brand-500/30 transition-all duration-300">
-                <div className="h-48 bg-gradient-to-br from-brand-500/20 to-brand-700/10 flex items-center justify-center relative overflow-hidden">
-                  {event.coverImageUrl ? (
-                    <img src={event.coverImageUrl} alt={event.title} className="absolute inset-0 w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-brand-400/60 text-sm font-medium uppercase tracking-wider">{event.category || "Event"}</span>
-                  )}
+          </aside>
+
+          {/* Event List */}
+          <div className="flex-1">
+            {loading ? (
+              <div className="text-center py-16 text-white/30">Loading events...</div>
+            ) : events.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="w-8 h-8 text-white/20" />
                 </div>
-                <div className="p-5">
-                  <h3 className="font-semibold text-lg text-white mb-1 group-hover:text-brand-400 transition-colors">{event.title}</h3>
-                  <p className="text-white/30 text-sm mb-4 line-clamp-2">{event.shortDesc}</p>
-                  <div className="flex items-center gap-2 text-sm text-white/40 mb-1">
-                    <Calendar className="w-4 h-4" />
-                    {new Date(event.startDate).toLocaleDateString("en-IE", { weekday: "short", month: "short", day: "numeric" })}
-                  </div>
-                  {event.venue && (
-                    <div className="flex items-center gap-2 text-sm text-white/40 mb-4">
-                      <MapPin className="w-4 h-4" />
-                      {event.venue}, {event.city}
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                    <span className="font-semibold text-brand-400">{getMinPrice(event)}</span>
-                    <span className="text-xs text-white/20">by {event.organization.name}</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                <h3 className="text-lg font-medium text-white/60 mb-2">No events found</h3>
+                <p className="text-white/30 mb-6">Try a different search or location</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {events.map(event => {
+                  const status = getStatus(event);
+                  return (
+                    <Link key={event.id} href={`/events/${event.id}`} className="group flex gap-4 bg-white/[0.02] border border-white/5 rounded-xl p-4 hover:border-brand-500/20 transition-all">
+                      {/* Image */}
+                      <div className="w-40 h-24 rounded-lg overflow-hidden shrink-0">
+                        {event.coverImageUrl ? (
+                          <img src={event.coverImageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-brand-500/20 to-brand-700/10 flex items-center justify-center">
+                            <span className="text-brand-400/40 text-xs">{event.category}</span>
+                          </div>
+                        )}
+                      </div>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        {status && (
+                          <span className="text-xs font-medium text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full">{status}</span>
+                        )}
+                        <h3 className="font-semibold text-white mt-1 group-hover:text-brand-400 transition-colors truncate">{event.title}</h3>
+                        <div className="text-sm text-white/40 mt-1">
+                          {new Date(event.startDate).toLocaleDateString("en-IE", { weekday: "long" })} at {new Date(event.startDate).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                        {event.venue && (
+                          <div className="text-sm text-white/30 mt-0.5">{event.city} · {event.venue}</div>
+                        )}
+                        <div className="text-sm font-medium text-white/60 mt-1">From {getMinPrice(event)}</div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Map */}
+          <aside className="hidden xl:block w-80 shrink-0">
+            <div className="sticky top-20 h-[calc(100vh-120px)] bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden flex items-center justify-center">
+              <div className="text-center p-6">
+                <Map className="w-10 h-10 text-white/10 mx-auto mb-3" />
+                <p className="text-sm text-white/30">Map view</p>
+                <p className="text-xs text-white/20 mt-1">Coming soon</p>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
     </div>
+  );
+}
+
+export default function EventsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white/30">Loading...</div>}>
+      <EventsContent />
+    </Suspense>
   );
 }
