@@ -186,8 +186,8 @@ function EventsContent() {
           </div>
 
           {/* Map */}
-          <aside className="hidden xl:block w-96 shrink-0">
-            <div className="sticky top-20 h-[calc(100vh-120px)] rounded-xl overflow-hidden border border-white/5">
+          <aside className="hidden lg:block w-[45%] shrink-0">
+            <div className="sticky top-16 h-[calc(100vh-70px)] rounded-xl overflow-hidden border border-white/5">
               <EventMap events={events.map(e => ({ id: e.id, title: e.title, venue: e.venue, city: e.city }))} city={city} />
             </div>
           </aside>
