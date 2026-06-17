@@ -1,6 +1,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Calendar, Ticket, TrendingUp, Shield, ArrowRight, Star, Users, Zap, MapPin } from "lucide-react";
+import HeroButtons from "./components/HeroButtons";
 
 const HeroScene = dynamic(() => import("./components/HeroScene"), { ssr: false });
 const EventsGrid = dynamic(() => import("./components/EventsGrid"), { ssr: false });
@@ -20,15 +21,7 @@ export default function HomePage() {
           <p className="text-lg text-white/50 mb-8 max-w-2xl mx-auto">
             The modern platform for selling and buying event tickets. Built for organizers who want to keep more of their revenue.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/events" className="inline-flex items-center justify-center gap-2 bg-brand-500 text-black px-7 py-3.5 rounded-full font-semibold hover:bg-brand-400 transition-all">
-              Find Events
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link href="/register?role=organizer" className="inline-flex items-center justify-center gap-2 border border-white/10 text-white px-7 py-3.5 rounded-full font-semibold hover:bg-white/5 transition-all">
-              Start Selling Tickets
-            </Link>
-          </div>
+          <HeroButtons />
         </div>
       </section>
 
