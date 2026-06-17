@@ -32,8 +32,12 @@ function EventsContent() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchEvents();
-  }, []);
+    const urlCity = searchParams.get("city") || "";
+    const urlSearch = searchParams.get("search") || "";
+    setCity(urlCity);
+    setSearch(urlSearch);
+    fetchEvents(urlSearch, urlCity, "");
+  }, [searchParams]);
 
   async function fetchEvents(query?: string, filterCity?: string, filterCat?: string) {
     setLoading(true);
