@@ -67,19 +67,6 @@ export default function HomePage() {
       </section>
 
 
-      {/* CTA */}
-      <section className="py-16 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gradient-to-br from-brand-500/10 to-brand-700/5 border border-brand-500/20 rounded-2xl p-10 text-center">
-            <h2 className="text-2xl font-bold text-white mb-3">Ready to sell tickets?</h2>
-            <p className="text-white/40 mb-6">Join organizers who save thousands in fees. No contracts, cancel anytime.</p>
-            <Link href="/register" className="inline-flex items-center gap-2 bg-brand-500 text-black px-7 py-3.5 rounded-full font-semibold hover:bg-brand-400 transition-all">
-              Get Started Free
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
       <footer className="border-t border-white/5 pt-12 pb-8 px-6">
