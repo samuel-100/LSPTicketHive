@@ -161,7 +161,7 @@ export default function DashboardPage() {
               const total = event.ticketTypes.reduce((s, t) => s + t.quantity, 0);
               const pct = total > 0 ? Math.round((sold / total) * 100) : 0;
               return (
-                <Link key={event.id} href={`/dashboard/events/${event.id}`} className="block bg-white/[0.02] border border-white/5 rounded-xl p-5 hover:border-brand-500/30 transition-all">
+                <Link key={event.id} href={`/events/${event.id}`} className="block bg-white/[0.02] border border-white/5 rounded-xl p-5 hover:border-brand-500/30 transition-all">
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-semibold text-white mb-1">{event.title}</h3>

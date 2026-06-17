@@ -25,7 +25,7 @@ export default function HomePage() {
               Find Events
               <ArrowRight className="w-4 h-4" />
             </Link>
-            <Link href="/dashboard/create" className="inline-flex items-center justify-center gap-2 border border-white/10 text-white px-7 py-3.5 rounded-full font-semibold hover:bg-white/5 transition-all">
+            <Link href="/register?role=organizer" className="inline-flex items-center justify-center gap-2 border border-white/10 text-white px-7 py-3.5 rounded-full font-semibold hover:bg-white/5 transition-all">
               Start Selling Tickets
             </Link>
           </div>
