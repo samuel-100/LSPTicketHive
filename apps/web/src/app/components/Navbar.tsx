@@ -74,12 +74,15 @@ export default function Navbar() {
                 className="bg-transparent text-sm text-white placeholder:text-white/25 outline-none w-full py-2.5"
               />
             </div>
-            <div className="flex items-center gap-1.5 px-3 border-l border-white/[0.06] cursor-pointer" onClick={() => {
-              const city = prompt("Enter your city:", location);
-              if (city) setLocation(city);
-            }}>
-              <MapPin className="w-3.5 h-3.5 text-brand-400" />
-              <span className="text-sm text-white/50 whitespace-nowrap">{location}</span>
+            <div className="flex items-center gap-1.5 px-3 border-l border-white/[0.06] relative">
+              <MapPin className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+              <input
+                type="text"
+                value={location}
+                onChange={e => setLocation(e.target.value)}
+                placeholder="City"
+                className="bg-transparent text-sm text-white/50 outline-none w-24 placeholder:text-white/25"
+              />
             </div>
             <button type="submit" className="bg-brand-500 p-2 rounded-full m-1 hover:bg-brand-400 transition-colors">
               <Search className="w-4 h-4 text-black" />
