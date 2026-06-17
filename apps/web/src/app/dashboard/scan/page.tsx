@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Ticket, CheckCircle, XCircle, Camera } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Camera, Keyboard } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -13,6 +13,10 @@ export default function ScanPage() {
   const [qrInput, setQrInput] = useState("");
   const [result, setResult] = useState<{ success: boolean; message: string; ticket?: any } | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [mode, setMode] = useState<"camera" | "manual">("camera");
+  const [cameraActive, setCameraActive] = useState(false);
+  const scannerRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const t = localStorage.getItem("token");
@@ -21,9 +25,57 @@ export default function ScanPage() {
     if (t) setToken(t);
   }, [router]);
 
+  useEffect(() => {
+    if (mode === "camera" && !cameraActive) {
+      startCamera();
+    }
+    return () => {
+      stopCamera();
+    };
+  }, [mode]);
+
+  async function startCamera() {
+    if (typeof window === "undefined") return;
+    const { Html5Qrcode } = await import("html5-qrcode");
+
+    if (scannerRef.current) {
+      await scannerRef.current.stop().catch(() => {});
+    }
+
+    const scanner = new Html5Qrcode("qr-reader");
+    scannerRef.current = scanner;
+
+    try {
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText: string) => {
+          handleScan(decodedText);
+          scanner.pause();
+          setTimeout(() => {
+            try { scanner.resume(); } catch {}
+          }, 3000);
+        },
+        () => {}
+      );
+      setCameraActive(true);
+    } catch (err) {
+      console.error("Camera error:", err);
+      setMode("manual");
+    }
+  }
+
+  async function stopCamera() {
+    if (scannerRef.current) {
+      try { await scannerRef.current.stop(); } catch {}
+      scannerRef.current = null;
+      setCameraActive(false);
+    }
+  }
+
   async function handleScan(code?: string) {
     const qr = code || qrInput.trim();
-    if (!qr) return;
+    if (!qr || scanning) return;
     setScanning(true);
     setResult(null);
 
@@ -52,73 +104,99 @@ export default function ScanPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <header className="bg-[#0a0a0a]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-50">
-        <div className="max-w-xl mx-auto px-6 py-4 flex items-center gap-4">
+      <div className="max-w-xl mx-auto px-6 py-8">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
           <Link href="/dashboard" className="text-white/40 hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-lg font-semibold text-white">Scan Tickets</h1>
+          <h1 className="text-xl font-semibold text-white">Scan Tickets</h1>
         </div>
-      </header>
 
-      <div className="max-w-xl mx-auto px-6 py-10">
-        {/* Camera placeholder */}
-        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 text-center mb-6">
-          <div className="w-16 h-16 bg-brand-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Camera className="w-8 h-8 text-brand-400" />
-          </div>
-          <h2 className="text-lg font-semibold text-white mb-2">QR Scanner</h2>
-          <p className="text-white/30 text-sm mb-6">Enter ticket code manually or scan with camera</p>
-
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={qrInput}
-              onChange={e => setQrInput(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleScan()}
-              placeholder="Enter QR code or ticket ID..."
-              className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 transition-colors"
-            />
-            <button
-              onClick={() => handleScan()}
-              disabled={scanning || !qrInput.trim()}
-              className="bg-brand-500 text-black px-6 py-3 rounded-xl font-semibold hover:bg-brand-400 disabled:opacity-50 transition-colors"
-            >
-              {scanning ? "..." : "Check In"}
-            </button>
-          </div>
+        {/* Mode Toggle */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setMode("camera")}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${mode === "camera" ? "bg-brand-500 text-black" : "bg-white/5 text-white/40 border border-white/10"}`}
+          >
+            <Camera className="w-4 h-4" />
+            Camera
+          </button>
+          <button
+            onClick={() => { stopCamera(); setMode("manual"); }}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all ${mode === "manual" ? "bg-brand-500 text-black" : "bg-white/5 text-white/40 border border-white/10"}`}
+          >
+            <Keyboard className="w-4 h-4" />
+            Manual
+          </button>
         </div>
+
+        {/* Camera View */}
+        {mode === "camera" && (
+          <div className="bg-black rounded-2xl overflow-hidden mb-6">
+            <div id="qr-reader" className="w-full" style={{ minHeight: "300px" }} />
+            {!cameraActive && (
+              <div className="flex items-center justify-center h-72 text-white/30 text-sm">
+                Starting camera...
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Manual Input */}
+        {mode === "manual" && (
+          <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 mb-6">
+            <p className="text-white/40 text-sm mb-4">Enter the ticket code shown below the QR code</p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={qrInput}
+                onChange={e => setQrInput(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleScan()}
+                placeholder="Enter ticket code..."
+                className="flex-1 px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 transition-colors"
+              />
+              <button
+                onClick={() => handleScan()}
+                disabled={scanning || !qrInput.trim()}
+                className="bg-brand-500 text-black px-6 py-3 rounded-xl font-semibold hover:bg-brand-400 disabled:opacity-50 transition-colors"
+              >
+                {scanning ? "..." : "Check In"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Result */}
         {result && (
-          <div className={`rounded-2xl p-6 text-center ${result.success ? "bg-brand-500/10 border border-brand-500/20" : "bg-red-500/10 border border-red-500/20"}`}>
+          <div className={`rounded-2xl p-6 text-center mb-6 ${result.success ? "bg-brand-500/10 border border-brand-500/20" : "bg-red-500/10 border border-red-500/20"}`}>
             <div className="flex justify-center mb-3">
               {result.success ? (
-                <CheckCircle className="w-12 h-12 text-brand-400" />
+                <CheckCircle className="w-14 h-14 text-brand-400" />
               ) : (
-                <XCircle className="w-12 h-12 text-red-400" />
+                <XCircle className="w-14 h-14 text-red-400" />
               )}
             </div>
             <h3 className={`text-xl font-bold mb-1 ${result.success ? "text-brand-400" : "text-red-400"}`}>
-              {result.success ? "Valid Ticket" : "Invalid"}
+              {result.success ? "Valid Ticket ✓" : "Invalid"}
             </h3>
             <p className="text-white/40">{result.message}</p>
             {result.ticket && (
               <div className="mt-3 text-sm text-white/30">
-                <p>{result.ticket.ticketType?.name}</p>
-                <p>{result.ticket.user?.firstName} {result.ticket.user?.lastName}</p>
+                <p className="font-medium text-white/50">{result.ticket.attendee?.firstName} {result.ticket.attendee?.lastName}</p>
+                <p>{result.ticket.ticketType} — {result.ticket.eventTitle}</p>
               </div>
             )}
           </div>
         )}
 
         {/* Instructions */}
-        <div className="mt-8 bg-white/[0.02] border border-white/5 rounded-2xl p-6">
-          <h3 className="font-semibold text-white mb-3">How to scan</h3>
-          <ul className="space-y-2 text-sm text-white/40">
-            <li>1. Ask attendee to show their QR code</li>
-            <li>2. Enter the code below the QR or use camera</li>
-            <li>3. Green = valid, Red = already used or invalid</li>
+        <div className="bg-white/[0.02] border border-white/5 rounded-xl p-5">
+          <h3 className="font-medium text-white text-sm mb-2">How to check in</h3>
+          <ul className="space-y-1.5 text-xs text-white/40">
+            <li>• Point camera at the attendee&apos;s QR code</li>
+            <li>• Or type the code below the QR manually</li>
+            <li>• Green = valid entry, Red = already used or invalid</li>
           </ul>
         </div>
       </div>
