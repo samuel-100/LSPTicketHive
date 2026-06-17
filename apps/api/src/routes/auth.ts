@@ -3,40 +3,15 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@lsp-tickethive/database";
 import { signToken, authenticate, AuthRequest } from "../middleware/auth";
 import { z } from "zod";
-import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
-
-const ses = new SESClient({ region: process.env.AWS_REGION || "eu-west-1" });
-const FROM_EMAIL = process.env.FROM_EMAIL || "mansaraysamuellamin001@gmail.com";
+import { sendVerificationCode } from "../services/email";
 
 function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-async function sendOTPEmail(email: string, code: string, name: string) {
-  try {
-    await ses.send(new SendEmailCommand({
-      Source: `LSPTicketHive <${FROM_EMAIL}>`,
-      Destination: { ToAddresses: [email] },
-      Message: {
-        Subject: { Data: `${code} is your LSPTicketHive verification code` },
-        Body: {
-          Html: { Data: `
-            <div style="font-family:-apple-system,sans-serif;max-width:400px;margin:0 auto;padding:40px 20px;text-align:center;">
-              <h2 style="color:#22c55e;margin-bottom:8px;">LSPTicketHive</h2>
-              <p style="color:#666;margin-bottom:24px;">Hi ${name}, verify your email to get started.</p>
-              <div style="background:#f5f5f5;border-radius:12px;padding:24px;margin-bottom:24px;">
-                <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#111;">${code}</span>
-              </div>
-              <p style="color:#999;font-size:13px;">This code expires in 10 minutes.</p>
-            </div>
-          ` },
-          Text: { Data: `Your LSPTicketHive verification code is: ${code}. Expires in 10 minutes.` },
-        },
-      },
-    }));
-  } catch (err) {
-    console.error("Failed to send OTP email:", err);
-  }
+// Thin wrapper so existing call sites stay unchanged.
+function sendOTPEmail(email: string, code: string, name: string) {
+  return sendVerificationCode(email, code, name);
 }
 
 export const authRouter = Router();
