@@ -68,11 +68,25 @@ export default function EventDetailPage() {
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     if (!event) return;
     const token = localStorage.getItem("token");
-    if (!token) return;
+    const userStr = localStorage.getItem("user");
+    if (!token || !userStr) return;
+
+    // Check if owner
+    fetch(`${API_URL}/api/organizations/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
+    }).then(r => r.json()).then(d => {
+      if (d.data && d.data.id === event.organizationId) {
+        setIsOwner(true);
+      }
+    }).catch(() => {});
+
+    // Check follow status
     fetch(`${API_URL}/api/follow/check/${event.organization.id || ""}`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then(r => r.json()).then(d => { if (d.data) setIsFollowing(d.data.following); }).catch(() => {});
@@ -221,8 +235,60 @@ export default function EventDetailPage() {
             </div>
           </div>
 
-          {/* Ticket Selection */}
+          {/* Ticket Selection OR Owner Management */}
           <div className="md:col-span-1">
+            {isOwner ? (
+              <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 sticky top-20">
+                <h2 className="text-xl font-semibold text-white mb-5">Event Management</h2>
+
+                {/* Stats */}
+                <div className="space-y-3 mb-6">
+                  {event.ticketTypes.map(tt => {
+                    const pct = tt.quantity > 0 ? Math.round((tt.sold / tt.quantity) * 100) : 0;
+                    return (
+                      <div key={tt.id} className="border border-white/5 rounded-xl p-3">
+                        <div className="flex justify-between text-sm mb-1">
+                          <span className="text-white">{tt.name}</span>
+                          <span className="text-white/40">{tt.sold}/{tt.quantity} sold</span>
+                        </div>
+                        <div className="w-full bg-white/5 rounded-full h-1.5">
+                          <div className="bg-brand-500 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Total stats */}
+                <div className="border-t border-white/5 pt-4 mb-6 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/40">Total tickets sold</span>
+                    <span className="text-white font-medium">{event.ticketTypes.reduce((s, t) => s + t.sold, 0)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/40">Revenue</span>
+                    <span className="text-brand-400 font-medium">€{event.ticketTypes.reduce((s, t) => s + t.sold * t.price, 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/40">Capacity</span>
+                    <span className="text-white">{event.ticketTypes.reduce((s, t) => s + t.sold, 0)}/{event.totalCapacity}</span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-2">
+                  <Link href="/dashboard/scan" className="w-full flex items-center justify-center gap-2 bg-brand-500 text-black py-3 rounded-xl font-semibold hover:bg-brand-400 transition-colors">
+                    Scan Tickets
+                  </Link>
+                  <button className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-3 rounded-xl font-medium hover:bg-white/10 transition-colors">
+                    Edit Event
+                  </button>
+                  <button className="w-full flex items-center justify-center gap-2 text-white/30 py-2 text-sm hover:text-red-400 transition-colors">
+                    Cancel Event
+                  </button>
+                </div>
+              </div>
+            ) : (
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 sticky top-20">
               <h2 className="text-xl font-semibold text-white mb-5">Get Tickets</h2>
               <div className="space-y-3">
@@ -278,6 +344,7 @@ export default function EventDetailPage() {
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
       </div>
