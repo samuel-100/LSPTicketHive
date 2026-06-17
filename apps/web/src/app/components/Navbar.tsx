@@ -38,7 +38,10 @@ export default function Navbar() {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    router.push(`/events?search=${searchQuery}&city=${location}`);
+    const params = new URLSearchParams();
+    if (searchQuery.trim()) params.set("search", searchQuery.trim());
+    if (location.trim() && location !== "Detecting...") params.set("city", location.trim());
+    router.push(`/events?${params.toString()}`);
   }
 
   function handleLogout() {

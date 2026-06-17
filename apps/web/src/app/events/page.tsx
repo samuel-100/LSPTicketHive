@@ -3,7 +3,10 @@
 import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Calendar, MapPin, Search, Map } from "lucide-react";
+import { Calendar, MapPin, Search } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const EventMap = dynamic(() => import("../components/EventMap"), { ssr: false });
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -179,13 +182,9 @@ function EventsContent() {
           </div>
 
           {/* Map */}
-          <aside className="hidden xl:block w-80 shrink-0">
-            <div className="sticky top-20 h-[calc(100vh-120px)] bg-white/[0.02] border border-white/5 rounded-xl overflow-hidden flex items-center justify-center">
-              <div className="text-center p-6">
-                <Map className="w-10 h-10 text-white/10 mx-auto mb-3" />
-                <p className="text-sm text-white/30">Map view</p>
-                <p className="text-xs text-white/20 mt-1">Coming soon</p>
-              </div>
+          <aside className="hidden xl:block w-96 shrink-0">
+            <div className="sticky top-20 h-[calc(100vh-120px)] rounded-xl overflow-hidden border border-white/5">
+              <EventMap events={events.map(e => ({ id: e.id, title: e.title, venue: e.venue, city: e.city }))} city={city} />
             </div>
           </aside>
         </div>
