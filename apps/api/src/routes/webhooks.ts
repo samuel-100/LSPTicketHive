@@ -20,38 +20,41 @@ webhooksRouter.post("/stripe", raw({ type: "application/json" }), async (req, re
   }
 
   switch (event.type) {
-    case "payment_intent.succeeded": {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      const { eventId, userId, items } = paymentIntent.metadata;
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const { orderId, eventId, userId, items } = session.metadata || {};
 
-      const order = await prisma.order.findFirst({
-        where: { stripePaymentId: paymentIntent.id },
-      });
+      if (!orderId || !items) {
+        console.error("checkout.session.completed missing metadata", session.id);
+        break;
+      }
 
+      const order = await prisma.order.findUnique({ where: { id: orderId } });
       if (!order) break;
+      // Idempotency: Stripe can deliver the same event more than once.
+      if (order.status === "COMPLETED") break;
 
       const lineItems = JSON.parse(items);
+      const paymentId = typeof session.payment_intent === "string" ? session.payment_intent : session.id;
 
-      // Create tickets and update order status
+      // Create tickets and update order status atomically.
       await prisma.$transaction(async (tx: any) => {
         await tx.order.update({
           where: { id: order.id },
-          data: { status: "COMPLETED" },
+          data: { status: "COMPLETED", stripePaymentId: paymentId },
         });
 
         for (const item of lineItems) {
-          // Update sold count
           await tx.ticketType.update({
             where: { id: item.ticketTypeId },
             data: { sold: { increment: item.quantity } },
           });
 
-          // Create individual tickets
           const tickets = Array.from({ length: item.quantity }, () => ({
             qrCode: crypto.randomUUID(),
             ticketTypeId: item.ticketTypeId,
             orderId: order.id,
-            userId,
+            userId: userId || order.userId,
           }));
 
           await tx.ticket.createMany({ data: tickets });
@@ -62,12 +65,15 @@ webhooksRouter.post("/stripe", raw({ type: "application/json" }), async (req, re
       break;
     }
 
-    case "payment_intent.payment_failed": {
-      const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      await prisma.order.updateMany({
-        where: { stripePaymentId: paymentIntent.id },
-        data: { status: "CANCELLED" },
-      });
+    case "checkout.session.expired": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const orderId = session.metadata?.orderId;
+      if (orderId) {
+        await prisma.order.updateMany({
+          where: { id: orderId, status: "PENDING" },
+          data: { status: "CANCELLED" },
+        });
+      }
       break;
     }
   }

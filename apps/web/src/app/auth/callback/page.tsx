@@ -9,11 +9,13 @@ function CallbackHandler() {
 
   useEffect(() => {
     const userParam = searchParams.get("user");
+    const tokenParam = searchParams.get("token");
     if (userParam) {
       try {
         const user = JSON.parse(decodeURIComponent(userParam));
         localStorage.setItem("user", JSON.stringify(user));
-        router.push("/events");
+        if (tokenParam) localStorage.setItem("token", tokenParam);
+        router.push(user.role === "ORGANIZER" ? "/dashboard" : "/events");
       } catch {
         router.push("/login?error=callback_failed");
       }

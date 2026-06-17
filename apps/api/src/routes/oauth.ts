@@ -22,10 +22,14 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: `${API_URL}/api/auth/google/callback`,
-  }, async (_accessToken, _refreshToken, profile, done) => {
+    passReqToCallback: true,
+  }, async (req: any, _accessToken: string, _refreshToken: string, profile: any, done: any) => {
     try {
       const email = profile.emails?.[0]?.value;
       if (!email) return done(new Error("No email from Google"));
+
+      // The role the user chose on the signup screen is passed through OAuth `state`.
+      const requestedRole = req.query?.state === "organizer" ? "ORGANIZER" : "ATTENDEE";
 
       let user = await prisma.user.findUnique({ where: { email } });
 
@@ -38,7 +42,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
             passwordHash: "",
             avatarUrl: profile.photos?.[0]?.value,
             emailVerified: true,
-            role: "ATTENDEE",
+            role: requestedRole,
           },
         });
       }
@@ -53,7 +57,11 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 passport.serializeUser((user: any, done) => done(null, user));
 passport.deserializeUser((user: any, done) => done(null, user));
 
-oauthRouter.get("/google", passport.authenticate("google", { scope: ["profile", "email"] }));
+oauthRouter.get("/google", (req, res, next) => {
+  // Carry the account type the user picked on the signup screen through OAuth.
+  const state = req.query.role === "organizer" ? "organizer" : "attendee";
+  passport.authenticate("google", { scope: ["profile", "email"], state })(req, res, next);
+});
 
 oauthRouter.get("/google/callback",
   passport.authenticate("google", { session: false, failureRedirect: `${FRONTEND_URL}/login?error=google_failed` }),
@@ -67,6 +75,6 @@ oauthRouter.get("/google/callback",
       id: user.userId, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role
     }));
 
-    res.redirect(`${FRONTEND_URL}/auth/callback?user=${userJson}`);
+    res.redirect(`${FRONTEND_URL}/auth/callback?user=${userJson}&token=${encodeURIComponent(token)}`);
   }
 );

@@ -48,12 +48,12 @@ export default function DashboardPage() {
       const data = await res.json();
       if (data.data) {
         if (data.data.stripeAccountId) setStripeConnected(true);
-        const eventsRes = await fetch(`${API_URL}/api/events?orgId=${data.data.id}`, {
+        const eventsRes = await fetch(`${API_URL}/api/events/my/events`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const eventsData = await eventsRes.json();
         if (eventsData.success) {
-          setEvents(eventsData.data?.items || []);
+          setEvents(eventsData.data || []);
         }
       }
     } catch {

@@ -48,7 +48,7 @@ eventsRouter.get("/", async (req, res) => {
   const [items, total] = await Promise.all([
     prisma.event.findMany({
       where,
-      include: { ticketTypes: true, organization: { select: { name: true, slug: true, logoUrl: true } } },
+      include: { ticketTypes: true, organization: { select: { id: true, name: true, slug: true, logoUrl: true } } },
       orderBy: { startDate: "asc" },
       skip: (pageNum - 1) * pageSize,
       take: pageSize,
@@ -65,7 +65,7 @@ eventsRouter.get("/:id", async (req, res) => {
     where: { id: req.params.id },
     include: {
       ticketTypes: true,
-      organization: { select: { name: true, slug: true, logoUrl: true } },
+      organization: { select: { id: true, name: true, slug: true, logoUrl: true } },
     },
   });
 

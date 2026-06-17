@@ -101,9 +101,36 @@ function RegisterForm() {
             </div>
           )}
 
+          {/* Account type — chosen first so it carries into social signup too */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-white/60 mb-2">I want to</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, role: "ATTENDEE" })}
+                className={`p-3 border rounded-xl text-left transition-all ${
+                  form.role === "ATTENDEE" ? "border-brand-500 bg-brand-500/10" : "border-white/10 hover:border-white/20"
+                }`}
+              >
+                <div className={`text-sm font-semibold mb-0.5 ${form.role === "ATTENDEE" ? "text-brand-400" : "text-white/60"}`}>Attend events</div>
+                <div className="text-xs text-white/30">Find & buy tickets</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, role: "ORGANIZER" })}
+                className={`p-3 border rounded-xl text-left transition-all ${
+                  form.role === "ORGANIZER" ? "border-brand-500 bg-brand-500/10" : "border-white/10 hover:border-white/20"
+                }`}
+              >
+                <div className={`text-sm font-semibold mb-0.5 ${form.role === "ORGANIZER" ? "text-brand-400" : "text-white/60"}`}>Sell tickets</div>
+                <div className="text-xs text-white/30">Create events (Business)</div>
+              </button>
+            </div>
+          </div>
+
           {/* Social Login */}
           <div className="space-y-3 mb-6">
-            <button type="button" onClick={() => window.location.href = `${API_URL}/api/auth/google`} className="w-full flex items-center justify-center gap-3 bg-white/5 border border-white/10 py-3.5 rounded-xl text-white font-medium hover:bg-white/10 transition-colors">
+            <button type="button" onClick={() => window.location.href = `${API_URL}/api/auth/google?role=${form.role === "ORGANIZER" ? "organizer" : "attendee"}`} className="w-full flex items-center justify-center gap-3 bg-white/5 border border-white/10 py-3.5 rounded-xl text-white font-medium hover:bg-white/10 transition-colors">
               <GoogleIcon />
               Continue with Google
             </button>
@@ -172,35 +199,6 @@ function RegisterForm() {
                 placeholder="Min 8 characters"
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-white/60 mb-2">Account type</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, role: "ATTENDEE" })}
-                  className={`p-4 border rounded-xl text-left transition-all ${
-                    form.role === "ATTENDEE"
-                      ? "border-brand-500 bg-brand-500/10"
-                      : "border-white/10 hover:border-white/20"
-                  }`}
-                >
-                  <div className={`text-sm font-semibold mb-0.5 ${form.role === "ATTENDEE" ? "text-brand-400" : "text-white/60"}`}>Attendee</div>
-                  <div className="text-xs text-white/30">Find & buy tickets</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setForm({ ...form, role: "ORGANIZER" })}
-                  className={`p-4 border rounded-xl text-left transition-all ${
-                    form.role === "ORGANIZER"
-                      ? "border-brand-500 bg-brand-500/10"
-                      : "border-white/10 hover:border-white/20"
-                  }`}
-                >
-                  <div className={`text-sm font-semibold mb-0.5 ${form.role === "ORGANIZER" ? "text-brand-400" : "text-white/60"}`}>Business</div>
-                  <div className="text-xs text-white/30">Create & sell events</div>
-                </button>
-              </div>
             </div>
             <button
               type="submit"

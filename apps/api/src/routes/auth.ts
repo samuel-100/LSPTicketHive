@@ -124,6 +124,21 @@ authRouter.post("/login", async (req, res) => {
       return res.status(401).json({ success: false, error: "Invalid credentials" });
     }
 
+    // Require a verified email before allowing login. Re-issue a code so the
+    // user can complete verification instead of being stuck.
+    if (!user.emailVerified) {
+      const code = generateOTP();
+      await prisma.verificationCode.create({
+        data: { email: user.email, code, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+      });
+      sendOTPEmail(user.email, code, user.firstName);
+      return res.status(403).json({
+        success: false,
+        error: "Please verify your email. We just sent you a new code.",
+        data: { requiresVerification: true, email: user.email },
+      });
+    }
+
     const token = signToken({ userId: user.id, email: user.email, role: user.role });
 
     res.cookie("token", token, COOKIE_OPTIONS);
