@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Calendar, MapPin, Search } from "lucide-react";
+import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 
 const EventMap = dynamic(() => import("../components/EventMap"), { ssr: false });
@@ -220,36 +221,51 @@ function EventsContent() {
               </div>
             ) : (
               <div className="space-y-4">
-                {visibleEvents.map(event => {
+                {visibleEvents.map((event, i) => {
                   const status = getStatus(event);
                   return (
-                    <Link key={event.id} href={`/events/${event.id}`} className="group flex gap-4 bg-white/[0.02] border border-white/5 rounded-xl p-4 hover:border-brand-500/20 transition-all">
-                      {/* Image */}
-                      <div className="w-40 h-24 rounded-lg overflow-hidden shrink-0">
-                        {event.coverImageUrl ? (
-                          <img src={event.coverImageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-brand-500/20 to-brand-700/10 flex items-center justify-center">
-                            <span className="text-brand-400/40 text-xs">{event.category}</span>
+                    <motion.div
+                      key={event.id}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: Math.min(i * 0.05, 0.4) }}
+                    >
+                      <Link href={`/events/${event.id}`} className="group flex gap-4 bg-white/[0.02] border border-white/5 rounded-2xl p-4 hover:border-brand-500/40 hover:bg-white/[0.04] hover:shadow-[0_0_25px_-12px_rgba(34,197,94,0.35)] transition-all">
+                        {/* Image */}
+                        <div className="w-40 h-28 rounded-xl overflow-hidden shrink-0 relative">
+                          {event.coverImageUrl ? (
+                            <img src={event.coverImageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-brand-500/20 to-brand-700/10 flex items-center justify-center">
+                              <span className="text-brand-400/40 text-xs uppercase tracking-wider">{event.category}</span>
+                            </div>
+                          )}
+                          <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-md text-white text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                            {getMinPrice(event)}
                           </div>
-                        )}
-                      </div>
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        {status && (
-                          <span className="text-xs font-medium text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full">{status}</span>
-                        )}
-                        <h3 className="font-semibold text-white mt-1 group-hover:text-brand-400 transition-colors truncate">{event.title}</h3>
-                        <div className="flex items-center gap-1.5 text-sm text-white/40 mt-1">
-                          <Calendar className="w-3.5 h-3.5 text-brand-400 shrink-0" />
-                          {new Date(event.startDate).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} · {new Date(event.startDate).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}
                         </div>
-                        {event.venue && (
-                          <div className="text-sm text-white/30 mt-0.5">{event.city} · {event.venue}</div>
-                        )}
-                        <div className="text-sm font-medium text-white/60 mt-1">From {getMinPrice(event)}</div>
-                      </div>
-                    </Link>
+                        {/* Info */}
+                        <div className="flex-1 min-w-0 py-0.5">
+                          <div className="flex items-center gap-2 mb-1">
+                            {event.category && <span className="text-[10px] uppercase tracking-wider text-brand-400/70 font-medium">{event.category}</span>}
+                            {status && (
+                              <span className="text-[10px] font-bold text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full">{status}</span>
+                            )}
+                          </div>
+                          <h3 className="font-semibold text-white text-lg group-hover:text-brand-400 transition-colors truncate">{event.title}</h3>
+                          <div className="flex items-center gap-1.5 text-sm text-white/40 mt-1">
+                            <Calendar className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+                            {new Date(event.startDate).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short" })} · {new Date(event.startDate).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}
+                          </div>
+                          {event.venue && (
+                            <div className="flex items-center gap-1.5 text-sm text-white/30 mt-0.5">
+                              <MapPin className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">{event.venue}{event.city ? `, ${event.city}` : ""}</span>
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    </motion.div>
                   );
                 })}
               </div>
