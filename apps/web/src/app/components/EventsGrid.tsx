@@ -75,8 +75,8 @@ export default function EventsGrid({ endpoint = "/api/events?limit=6&sort=popula
                 {event.coverImageUrl ? (
                   <img src={event.coverImageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-brand-500/20 to-brand-700/10 flex items-center justify-center">
-                    <span className="text-brand-400/50 text-xs uppercase tracking-wider">{event.category || "Event"}</span>
+                  <div className="on-image w-full h-full bg-gradient-to-br from-brand-600 to-emerald-800 flex items-center justify-center">
+                    <span className="text-white/80 text-xs uppercase tracking-wider font-medium">{event.category || "Event"}</span>
                   </div>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />

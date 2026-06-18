@@ -237,8 +237,8 @@ function EventsContent() {
                           {event.coverImageUrl ? (
                             <img src={event.coverImageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                           ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-brand-500/20 to-brand-700/10 flex items-center justify-center">
-                              <span className="text-brand-400/40 text-xs uppercase tracking-wider">{event.category}</span>
+                            <div className="on-image w-full h-full bg-gradient-to-br from-brand-600 to-emerald-800 flex items-center justify-center">
+                              <span className="text-white/80 text-xs uppercase tracking-wider font-medium">{event.category}</span>
                             </div>
                           )}
                           <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-md text-white text-[11px] font-semibold px-2 py-0.5 rounded-full">

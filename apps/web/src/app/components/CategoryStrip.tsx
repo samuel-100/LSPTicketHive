@@ -33,7 +33,7 @@ export default function CategoryStrip() {
             transition={{ duration: 0.35, delay: i * 0.05 }}
             whileHover={{ y: -6 }}
           >
-            <Link href={`/events?category=${encodeURIComponent(c.name)}`} className="block group relative h-28 rounded-2xl overflow-hidden">
+            <Link href={`/events?category=${encodeURIComponent(c.name)}`} className="on-image block group relative h-28 rounded-2xl overflow-hidden">
               {/* Photo */}
               <img src={c.img} alt={c.name} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
               {/* Color wash */}
