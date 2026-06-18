@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Trash2, Tag } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
@@ -18,7 +18,18 @@ interface Promo {
 }
 
 export default function PromosPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a]" />}>
+      <PromosInner />
+    </Suspense>
+  );
+}
+
+function PromosInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const eventId = searchParams.get("eventId") || "";
+  const eventTitle = searchParams.get("title") || "";
   const [token, setToken] = useState("");
   const [promos, setPromos] = useState<Promo[]>([]);
   const [code, setCode] = useState("");
@@ -38,7 +49,9 @@ export default function PromosPage() {
   async function load(t: string) {
     const res = await fetch(`${API_URL}/api/organizer/promos`, { headers: { Authorization: `Bearer ${t}` } });
     const d = await res.json();
-    setPromos(d.data || []);
+    // When scoped to an event, show that event's codes (+ org-wide codes that apply everywhere).
+    const all = d.data || [];
+    setPromos(eventId ? all.filter((p: any) => p.eventId === eventId || p.eventId === null) : all);
   }
 
   async function create(e: React.FormEvent) {
@@ -47,7 +60,7 @@ export default function PromosPage() {
     const res = await fetch(`${API_URL}/api/organizer/promos`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ code, percentOff: Number(percentOff), maxUses: maxUses ? Number(maxUses) : undefined }),
+      body: JSON.stringify({ code, percentOff: Number(percentOff), maxUses: maxUses ? Number(maxUses) : undefined, eventId: eventId || undefined }),
     });
     const d = await res.json();
     if (d.success) { setCode(""); setMaxUses(""); setPercentOff(10); load(token); }
@@ -64,7 +77,10 @@ export default function PromosPage() {
       <div className="max-w-2xl mx-auto px-6 py-8">
         <div className="flex items-center gap-4 mb-8">
           <Link href="/dashboard" className="text-white/40 hover:text-white transition-colors"><ArrowLeft className="w-5 h-5" /></Link>
-          <h1 className="text-xl font-semibold text-white">Promo Codes</h1>
+          <div>
+            <h1 className="text-xl font-semibold text-white">Promo Codes</h1>
+            {eventTitle && <p className="text-xs text-brand-400 mt-0.5">For: {eventTitle}</p>}
+          </div>
         </div>
 
         <form onSubmit={create} className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 mb-6">

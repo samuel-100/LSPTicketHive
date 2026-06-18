@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Search } from "lucide-react";
 import QRCode from "../../components/QRCode";
 
@@ -20,7 +20,18 @@ interface Found {
 }
 
 export default function AttendeeLookupPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a]" />}>
+      <AttendeeInner />
+    </Suspense>
+  );
+}
+
+function AttendeeInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const eventId = searchParams.get("eventId") || "";
+  const eventTitle = searchParams.get("title") || "";
   const [token, setToken] = useState("");
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Found[]>([]);
@@ -45,7 +56,7 @@ export default function AttendeeLookupPage() {
     setLoading(true);
     setSearched(true);
     try {
-      const res = await fetch(`${API_URL}/api/checkin/lookup?q=${encodeURIComponent(q.trim())}`, {
+      const res = await fetch(`${API_URL}/api/checkin/lookup?q=${encodeURIComponent(q.trim())}${eventId ? `&eventId=${eventId}` : ""}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -63,10 +74,13 @@ export default function AttendeeLookupPage() {
           <Link href="/dashboard" className="text-white/40 hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-xl font-semibold text-white">Find an Attendee</h1>
+          <div>
+            <h1 className="text-xl font-semibold text-white">Find an Attendee</h1>
+            {eventTitle && <p className="text-xs text-brand-400 mt-0.5">For: {eventTitle}</p>}
+          </div>
         </div>
         <p className="text-white/40 text-sm mb-6">
-          Search by name or email to find someone&apos;s ticket — useful if they lost access to their phone or email.
+          Search by name or email to find someone&apos;s ticket — useful if they lost access to their phone or email.{eventTitle ? "" : " Showing all your events."}
         </p>
 
         <form onSubmit={search} className="flex gap-2 mb-6">

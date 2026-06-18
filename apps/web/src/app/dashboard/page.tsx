@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Ticket, Calendar, TrendingUp, LogOut, Banknote, QrCode, Search, Tag } from "lucide-react";
+import { Plus, Ticket, Calendar, TrendingUp, LogOut, Banknote } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -121,21 +121,9 @@ export default function DashboardPage() {
               Bank Connected
             </div>
           )}
-          <Link href="/dashboard/scan" className="flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-3 rounded-xl text-sm font-medium text-white hover:border-brand-500/30 transition-colors">
-            <QrCode className="w-4 h-4 text-brand-400" />
-            Scan Tickets
-          </Link>
-          <Link href="/dashboard/attendees" className="flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-3 rounded-xl text-sm font-medium text-white hover:border-brand-500/30 transition-colors">
-            <Search className="w-4 h-4 text-brand-400" />
-            Find Attendee
-          </Link>
           <Link href="/dashboard/analytics" className="flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-3 rounded-xl text-sm font-medium text-white hover:border-brand-500/30 transition-colors">
             <TrendingUp className="w-4 h-4 text-brand-400" />
             Analytics
-          </Link>
-          <Link href="/dashboard/promos" className="flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-3 rounded-xl text-sm font-medium text-white hover:border-brand-500/30 transition-colors">
-            <Tag className="w-4 h-4 text-brand-400" />
-            Promo Codes
           </Link>
         </div>
 

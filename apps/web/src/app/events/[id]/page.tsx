@@ -681,17 +681,20 @@ export default function EventDetailPage() {
                   </div>
                 )}
 
-                {/* Actions */}
+                {/* Actions — all scoped to THIS event */}
                 <div className="space-y-2 border-t border-white/5 pt-4">
-                  <Link href="/dashboard/scan" className="w-full flex items-center justify-center gap-2 bg-brand-500 text-black py-3 rounded-xl text-sm font-semibold hover:bg-brand-400 transition-colors">
+                  <Link href={`/dashboard/scan?eventId=${params.id}&title=${encodeURIComponent(event.title)}`} className="w-full flex items-center justify-center gap-2 bg-brand-500 text-black py-3 rounded-xl text-sm font-semibold hover:bg-brand-400 transition-colors">
                     Scan Tickets
+                  </Link>
+                  <Link href={`/dashboard/attendees?eventId=${params.id}&title=${encodeURIComponent(event.title)}`} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
+                    Find Attendee
+                  </Link>
+                  <Link href={`/dashboard/promos?eventId=${params.id}&title=${encodeURIComponent(event.title)}`} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
+                    Promo Codes
                   </Link>
                   <Link href={`/events/${params.id}/edit`} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
                     Edit Event
                   </Link>
-                  <button onClick={() => { navigator.clipboard.writeText(window.location.href); alert("Link copied!"); }} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
-                    Share Link
-                  </button>
                   <button onClick={exportCsv} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
                     Export Attendees (CSV)
                   </button>

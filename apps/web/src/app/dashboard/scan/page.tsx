@@ -1,14 +1,25 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, CheckCircle, XCircle, Camera, Keyboard } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 export default function ScanPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a]" />}>
+      <ScanInner />
+    </Suspense>
+  );
+}
+
+function ScanInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const eventId = searchParams.get("eventId") || "";
+  const eventTitle = searchParams.get("title") || "";
   const [token, setToken] = useState("");
   const [qrInput, setQrInput] = useState("");
   const [result, setResult] = useState<{ success: boolean; message: string; ticket?: any } | null>(null);
@@ -86,7 +97,7 @@ export default function ScanPage() {
         method: "POST",
         headers,
         credentials: "include",
-        body: JSON.stringify({ qrCode: qr }),
+        body: JSON.stringify({ qrCode: qr, eventId: eventId || undefined }),
       });
       const data = await res.json();
 
@@ -110,7 +121,10 @@ export default function ScanPage() {
           <Link href="/dashboard" className="text-white/40 hover:text-white transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-xl font-semibold text-white">Scan Tickets</h1>
+          <div>
+            <h1 className="text-xl font-semibold text-white">Scan Tickets</h1>
+            {eventTitle && <p className="text-xs text-brand-400 mt-0.5">For: {eventTitle}</p>}
+          </div>
         </div>
 
         {/* Mode Toggle */}

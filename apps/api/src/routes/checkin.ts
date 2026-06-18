@@ -25,6 +25,12 @@ checkInRouter.post("/scan", authenticate, requireRole("ORGANIZER", "ADMIN"), asy
     return res.status(403).json({ success: false, error: `Wrong event! This ticket is for "${ticket.ticketType.event.title}", not your event.` });
   }
 
+  // If scanning for a specific event, reject tickets that belong to a different one.
+  const scopedEventId = req.body?.eventId;
+  if (scopedEventId && ticket.ticketType.event.id !== scopedEventId) {
+    return res.status(409).json({ success: false, error: `This ticket is for "${ticket.ticketType.event.title}", not the event you're scanning for.` });
+  }
+
   if (ticket.status === "USED") {
     const usedAt = ticket.checkedInAt ? new Date(ticket.checkedInAt).toLocaleString("en-IE", { dateStyle: "medium", timeStyle: "short" }) : "unknown time";
     return res.status(409).json({
@@ -67,10 +73,13 @@ checkInRouter.get("/lookup", authenticate, requireRole("ORGANIZER", "ADMIN"), as
   const org = await prisma.organization.findUnique({ where: { ownerId: req.user!.userId } });
   if (!org) return res.status(403).json({ success: false, error: "Not authorized" });
 
+  // Optionally scope to a single event.
+  const scopedEventId = req.query.eventId as string | undefined;
+
   // Only tickets for events owned by this organization, matching the search.
   const tickets = await prisma.ticket.findMany({
     where: {
-      ticketType: { event: { organizationId: org.id } },
+      ticketType: { event: scopedEventId ? { id: scopedEventId, organizationId: org.id } : { organizationId: org.id } },
       OR: [
         { user: { firstName: { contains: q, mode: "insensitive" } } },
         { user: { lastName: { contains: q, mode: "insensitive" } } },
