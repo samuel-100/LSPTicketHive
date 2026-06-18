@@ -106,7 +106,7 @@ eventsRouter.get("/:id", async (req, res) => {
     where: { id: req.params.id },
     include: {
       ticketTypes: true,
-      organization: { select: { id: true, name: true, slug: true, logoUrl: true } },
+      organization: { select: { id: true, name: true, slug: true, logoUrl: true, ownerId: true } },
     },
   });
 

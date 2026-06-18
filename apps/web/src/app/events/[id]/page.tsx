@@ -42,7 +42,7 @@ interface EventDetail {
   organizationId: string;
   promotable?: boolean;
   commissionRate?: number;
-  organization: { id: string; name: string; slug: string };
+  organization: { id: string; name: string; slug: string; ownerId?: string };
 }
 
 export default function EventDetailPage() {
@@ -127,6 +127,21 @@ function EventDetailInner() {
       headers: { Authorization: `Bearer ${token}` },
     }).then(r => r.json()).then(d => { if (d.data) setIsFollowing(d.data.following); }).catch(() => {});
   }, [event]);
+
+  async function messageOrganizer() {
+    const token = localStorage.getItem("token");
+    if (!token) { window.location.href = "/login"; return; }
+    const ownerId = (event as any)?.organization?.ownerId;
+    if (!ownerId) return;
+    const res = await fetch(`${API_URL}/api/messages/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ userId: ownerId, eventId: params.id, body: `Hi! I'm interested in promoting "${event?.title}".` }),
+    });
+    const d = await res.json();
+    if (d.success) window.location.href = `/messages?c=${d.data.conversationId}`;
+    else alert(d.error || "Could not start chat");
+  }
 
   async function toggleFollow() {
     const token = localStorage.getItem("token");
@@ -621,16 +636,26 @@ function EventDetailInner() {
                     <p className="text-white font-medium">{event.organization.name}</p>
                   </div>
                 </div>
-                <button
-                  onClick={toggleFollow}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    isFollowing
-                      ? "bg-brand-500/10 text-brand-400 border border-brand-500/20"
-                      : "bg-white/5 text-white/60 border border-white/10 hover:border-brand-500/30"
-                  }`}
-                >
-                  {isFollowing ? "Following" : "Follow"}
-                </button>
+                <div className="flex items-center gap-2">
+                  {!isOwner && (
+                    <button
+                      onClick={messageOrganizer}
+                      className="px-4 py-2 rounded-lg text-sm font-medium bg-white/5 text-white/70 border border-white/10 hover:border-brand-500/30 transition-all"
+                    >
+                      Message
+                    </button>
+                  )}
+                  <button
+                    onClick={toggleFollow}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      isFollowing
+                        ? "bg-brand-500/10 text-brand-400 border border-brand-500/20"
+                        : "bg-white/5 text-white/60 border border-white/10 hover:border-brand-500/30"
+                    }`}
+                  >
+                    {isFollowing ? "Following" : "Follow"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
