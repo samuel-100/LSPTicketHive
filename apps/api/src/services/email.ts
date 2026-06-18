@@ -35,6 +35,8 @@ export async function sendEmail(to: string, subject: string, html: string, text:
         console.error("Resend send failed:", res.status, await res.text());
         return false;
       }
+      const body = await res.json().catch(() => ({}));
+      console.log(`Resend sent to ${to} ("${subject}") id=${(body as any).id || "?"}`);
       return true;
     } catch (err) {
       console.error("Resend send error:", err);
