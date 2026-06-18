@@ -83,11 +83,25 @@ function MessagesInner() {
     setConvos(d.data || []);
   }
   async function loadThread(id: string, t: string, silent = false) {
-    const d = await fetch(`${API_URL}/api/messages/${id}`, { headers: { Authorization: `Bearer ${t}` } }).then(r => r.json());
-    if (d.success) {
-      setThread(d.data);
-      if (!silent) setTimeout(() => bottomRef.current?.scrollIntoView(), 50);
+    try {
+      const d = await fetch(`${API_URL}/api/messages/${id}`, { headers: { Authorization: `Bearer ${t}` } }).then(r => r.json());
+      if (d.success) {
+        setThread(d.data);
+        if (!silent) setTimeout(() => bottomRef.current?.scrollIntoView(), 50);
+      } else if (!silent) {
+        // Surface so it never silently shows "Select a conversation".
+        setThread({ other: null, messages: [], conversationId: id, error: d.error || "Could not open conversation" });
+      }
+    } catch {
+      if (!silent) setThread({ other: null, messages: [], conversationId: id, error: "Network error" });
     }
+  }
+
+  function openConvo(id: string) {
+    setActive(id);
+    setThread(null);
+    const t = localStorage.getItem("token") || token;
+    if (t) loadThread(id, t);
   }
   async function send() {
     if (!body.trim() || !active) return;
@@ -112,7 +126,7 @@ function MessagesInner() {
             {convos.length === 0 ? (
               <div className="p-6 text-center text-white/30 text-sm">No conversations yet</div>
             ) : convos.map(c => (
-              <button key={c.id} onClick={() => setActive(c.id)} className={`w-full flex items-center gap-3 p-4 text-left border-b border-white/5 hover:bg-white/5 transition-colors ${active === c.id ? "bg-white/5" : ""}`}>
+              <button key={c.id} onClick={() => openConvo(c.id)} className={`w-full flex items-center gap-3 p-4 text-left border-b border-white/5 hover:bg-white/5 transition-colors ${active === c.id ? "bg-white/5" : ""}`}>
                 <div className="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center shrink-0">
                   {c.other?.avatarUrl ? <img src={c.other.avatarUrl} className="w-full h-full rounded-full object-cover" alt="" /> : <span className="text-brand-400 font-bold text-sm">{c.other?.firstName?.[0]}</span>}
                 </div>
@@ -129,8 +143,12 @@ function MessagesInner() {
 
           {/* Thread */}
           <div className={`md:col-span-2 bg-white/[0.02] border border-white/5 rounded-2xl flex flex-col ${!active ? "hidden md:flex" : ""}`}>
-            {!active || !thread ? (
+            {!active ? (
               <div className="flex-1 flex items-center justify-center text-white/30 text-sm">Select a conversation</div>
+            ) : !thread ? (
+              <div className="flex-1 flex items-center justify-center text-white/30 text-sm">Loading…</div>
+            ) : thread.error ? (
+              <div className="flex-1 flex items-center justify-center text-red-400 text-sm">{thread.error}</div>
             ) : (
               <>
                 <div className="flex items-center gap-3 p-4 border-b border-white/5">
