@@ -92,6 +92,24 @@ export default function Navbar() {
               </button>
               {locationOpen && (
                 <div className="absolute top-full right-0 mt-2 w-64 bg-[#1a1a1a] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                  <div className="p-2 border-b border-white/5">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={location}
+                      onChange={e => setLocation(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") {
+                          setLocationOpen(false);
+                          const params = new URLSearchParams();
+                          if (location.trim()) params.set("city", location.trim());
+                          router.push(`/events?${params.toString()}`);
+                        }
+                      }}
+                      placeholder="Type any city…"
+                      className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-brand-500"
+                    />
+                  </div>
                   <button
                     onClick={detectLocation}
                     className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
@@ -111,7 +129,7 @@ export default function Navbar() {
                     {["Dublin", "London", "Belfast", "Lagos", "New York", "Berlin", "Paris", "Accra"].map(c => (
                       <button
                         key={c}
-                        onClick={() => { setLocation(c); setLocationOpen(false); }}
+                        onClick={() => { setLocation(c); setLocationOpen(false); router.push(`/events?city=${encodeURIComponent(c)}`); }}
                         className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors text-left"
                       >
                         <svg className="w-4 h-4 text-white/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
