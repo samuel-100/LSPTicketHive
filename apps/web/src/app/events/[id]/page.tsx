@@ -257,6 +257,25 @@ function EventDetailInner() {
     setTimeout(() => setReviewMsg(""), 4000);
   }
 
+  // Promoter request (brief)
+  const [reqOpen, setReqOpen] = useState(false);
+  const [reqRate, setReqRate] = useState(15);
+  const [reqAudience, setReqAudience] = useState("");
+  const [reqNote, setReqNote] = useState("");
+  const [reqStatus, setReqStatus] = useState("");
+  async function postPromoterRequest() {
+    setReqStatus("Posting…");
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API_URL}/api/promoter/requests`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ eventId: params.id, commissionRate: reqRate, targetAudience: reqAudience, note: reqNote }),
+    });
+    const d = await res.json();
+    if (d.success) { setReqStatus("Posted! Matching promoters notified."); setTimeout(() => { setReqOpen(false); setReqStatus(""); }, 2200); }
+    else setReqStatus(d.error || "Failed");
+  }
+
   // Organizer tools
   const [blastOpen, setBlastOpen] = useState(false);
   const [blastSubject, setBlastSubject] = useState("");
@@ -779,6 +798,9 @@ function EventDetailInner() {
                   <button onClick={() => setBlastOpen(true)} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
                     Email Attendees
                   </button>
+                  <button onClick={() => setReqOpen(true)} className="w-full flex items-center justify-center gap-2 bg-brand-500/15 border border-brand-500/30 text-brand-400 py-2.5 rounded-xl text-sm font-semibold hover:bg-brand-500/25 transition-colors">
+                    📣 Request Promoters
+                  </button>
                 </div>
               </div>
             ) : (
@@ -850,6 +872,25 @@ function EventDetailInner() {
 
       {/* Promote modal */}
       <PromoteModal open={promoteOpen} onClose={() => setPromoteOpen(false)} eventTitle={event.title} link={promoteLink} commissionRate={event.commissionRate} />
+
+      {/* Request promoters modal */}
+      {reqOpen && (
+        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4" onClick={() => setReqOpen(false)}>
+          <div className="bg-[#141414] border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-white mb-1">Request promoters</h2>
+            <p className="text-xs text-white/40 mb-4">Posts an opportunity and emails promoters whose interests match this event.</p>
+            <label className="block text-sm text-white/60 mb-1">Commission: {reqRate}%</label>
+            <input type="range" min={1} max={30} value={reqRate} onChange={e => setReqRate(Number(e.target.value))} className="w-full accent-brand-500 mb-3" />
+            <input value={reqAudience} onChange={e => setReqAudience(e.target.value)} placeholder="Target audience (e.g. uni students, Afrobeats crowd)" className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 mb-3" />
+            <textarea value={reqNote} onChange={e => setReqNote(e.target.value)} placeholder="Note to promoters (optional)" rows={3} className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 mb-3" />
+            {reqStatus && <p className="text-xs text-brand-400 mb-3">{reqStatus}</p>}
+            <div className="flex gap-2">
+              <button onClick={() => setReqOpen(false)} className="flex-1 py-2.5 rounded-lg text-sm bg-white/5 border border-white/10 text-white/60">Cancel</button>
+              <button onClick={postPromoterRequest} className="flex-1 py-2.5 rounded-lg text-sm bg-brand-500 text-black font-semibold hover:bg-brand-400 transition-colors">Post opportunity</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Email blast modal */}
       {blastOpen && (

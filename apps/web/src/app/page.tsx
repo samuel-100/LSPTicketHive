@@ -6,6 +6,7 @@ import HeroButtons from "./components/HeroButtons";
 const HeroScene = dynamic(() => import("./components/HeroScene"), { ssr: false });
 const EventsGrid = dynamic(() => import("./components/EventsGrid"), { ssr: false });
 const CategoryStrip = dynamic(() => import("./components/CategoryStrip"), { ssr: false });
+import CityCard from "./components/CityCard";
 
 export default function HomePage() {
   return (
@@ -78,7 +79,7 @@ export default function HomePage() {
             <CityCard city="New York" image="https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=400&q=80" />
             <CityCard city="Paris" image="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80" />
             <CityCard city="Berlin" image="https://images.unsplash.com/photo-1560969184-10fe8719e047?w=400&q=80" />
-            <CityCard city="Accra" image="https://images.unsplash.com/photo-1605379399642-870262d3d051?w=400&q=80" />
+            <CityCard city="Accra" image="https://images.unsplash.com/photo-1589330694653-ded6df03f754?w=400&q=80" />
             <CityCard city="Barcelona" image="https://images.unsplash.com/photo-1583422409516-2895a77efded?w=400&q=80" />
           </div>
         </div>
@@ -152,14 +153,3 @@ export default function HomePage() {
   );
 }
 
-function CityCard({ city, image }: { city: string; image: string }) {
-  return (
-    <Link href={`/events?city=${city}`} className="group relative h-36 rounded-xl overflow-hidden">
-      <img src={image} alt={city} className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-      <div className="absolute bottom-0 left-0 p-4">
-        <div className="font-semibold text-white">{city}</div>
-      </div>
-    </Link>
-  );
-}

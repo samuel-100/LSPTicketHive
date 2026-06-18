@@ -266,6 +266,21 @@ model Follow {
   @@index([organizationId])
 }
 
+model PromoterRequest {
+  id             String   @id @default(cuid())
+  organizationId String
+  eventId        String
+  category       String?  // event category, for interest matching
+  commissionRate Float    @default(10)
+  targetAudience String?  // e.g. "uni students, Afrobeats crowd"
+  note           String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  @@index([category])
+  @@index([organizationId])
+}
+
 model Conversation {
   id         String    @id @default(cuid())
   userAId    String

@@ -19,6 +19,7 @@ export default function PromotePage() {
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState<any>(null);
   const [promoteEvent, setPromoteEvent] = useState<MEvent | null>(null);
+  const [opportunities, setOpportunities] = useState<any[]>([]);
 
   useEffect(() => {
     const u = localStorage.getItem("user");
@@ -30,6 +31,11 @@ export default function PromotePage() {
     fetch(`${API_URL}/api/promoter/marketplace`)
       .then(r => r.json()).then(d => { setEvents(d.data || []); setLoading(false); })
       .catch(() => setLoading(false));
+    const t = localStorage.getItem("token");
+    if (t) {
+      fetch(`${API_URL}/api/promoter/opportunities`, { headers: { Authorization: `Bearer ${t}` } })
+        .then(r => r.json()).then(d => setOpportunities(d.data || [])).catch(() => {});
+    }
   }, []);
 
   function openPromote(e: MEvent) {
@@ -57,6 +63,32 @@ export default function PromotePage() {
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-10">
+        {/* Opportunities — briefs from businesses */}
+        {opportunities.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-xl font-bold text-white mb-1">📣 Promoter opportunities</h2>
+            <p className="text-white/40 text-sm mb-5">Businesses actively looking for promoters{me ? " — matched to your interests" : ""}</p>
+            <div className="space-y-3">
+              {opportunities.map((o: any) => (
+                <div key={o.id} className={`flex items-center gap-4 rounded-2xl p-4 border ${o.matchesInterest ? "bg-brand-500/[0.06] border-brand-500/25" : "bg-white/[0.02] border-white/5"}`}>
+                  {o.event?.coverImageUrl && <img src={o.event.coverImageUrl} className="w-16 h-16 rounded-xl object-cover shrink-0" alt="" />}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-white truncate">{o.event?.title}</h3>
+                      {o.matchesInterest && <span className="text-[10px] bg-brand-500 text-black font-bold px-2 py-0.5 rounded-full shrink-0">For you</span>}
+                    </div>
+                    <p className="text-xs text-white/40">{o.organization?.name} · <span className="text-brand-400 font-semibold">{o.commissionRate}% commission</span>{o.targetAudience ? ` · ${o.targetAudience}` : ""}</p>
+                    {o.note && <p className="text-xs text-white/50 mt-1 line-clamp-1">&ldquo;{o.note}&rdquo;</p>}
+                  </div>
+                  <button onClick={() => setPromoteEvent({ id: o.event.id, title: o.event.title, commissionRate: o.commissionRate } as any)} className="bg-brand-500 text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-400 transition-colors shrink-0">
+                    Promote
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <h2 className="text-xl font-bold text-white mb-6">Events open for promotion</h2>
         {loading ? (
           <div className="text-center py-16 text-white/30">Loading...</div>
