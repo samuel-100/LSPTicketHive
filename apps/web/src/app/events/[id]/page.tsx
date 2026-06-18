@@ -193,6 +193,47 @@ export default function EventDetailPage() {
     setTimeout(() => setReviewMsg(""), 4000);
   }
 
+  // Organizer tools
+  const [blastOpen, setBlastOpen] = useState(false);
+  const [blastSubject, setBlastSubject] = useState("");
+  const [blastMessage, setBlastMessage] = useState("");
+  const [blastAudience, setBlastAudience] = useState("attendees");
+  const [blastStatus, setBlastStatus] = useState("");
+
+  async function exportCsv() {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API_URL}/api/organizer/events/${params.id}/attendees.csv`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) { alert("Export failed"); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "attendees.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function sendBlast() {
+    if (!blastSubject.trim() || !blastMessage.trim()) { setBlastStatus("Subject and message required"); return; }
+    setBlastStatus("Sending…");
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API_URL}/api/organizer/events/${params.id}/blast`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ subject: blastSubject, message: blastMessage, audience: blastAudience }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setBlastStatus(`Sent to ${data.data.sent} of ${data.data.total} recipients`);
+      setBlastSubject(""); setBlastMessage("");
+      setTimeout(() => { setBlastOpen(false); setBlastStatus(""); }, 2500);
+    } else {
+      setBlastStatus(data.error || "Failed to send");
+    }
+  }
+
   const [shareLabel, setShareLabel] = useState("Share");
   async function shareEvent() {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -574,6 +615,12 @@ export default function EventDetailPage() {
                   <button onClick={() => { navigator.clipboard.writeText(window.location.href); alert("Link copied!"); }} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
                     Share Link
                   </button>
+                  <button onClick={exportCsv} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
+                    Export Attendees (CSV)
+                  </button>
+                  <button onClick={() => setBlastOpen(true)} className="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors">
+                    Email Attendees
+                  </button>
                 </div>
               </div>
             ) : (
@@ -636,6 +683,43 @@ export default function EventDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Email blast modal */}
+      {blastOpen && (
+        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4" onClick={() => setBlastOpen(false)}>
+          <div className="bg-[#141414] border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-white mb-4">Email your audience</h2>
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                {["attendees", "followers"].map(a => (
+                  <button key={a} onClick={() => setBlastAudience(a)}
+                    className={`flex-1 py-2 rounded-lg text-sm capitalize transition-colors ${blastAudience === a ? "bg-brand-500 text-black font-medium" : "bg-white/5 text-white/50 border border-white/10"}`}>
+                    {a}
+                  </button>
+                ))}
+              </div>
+              <input
+                value={blastSubject}
+                onChange={e => setBlastSubject(e.target.value)}
+                placeholder="Subject"
+                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500"
+              />
+              <textarea
+                value={blastMessage}
+                onChange={e => setBlastMessage(e.target.value)}
+                placeholder="Your message…"
+                rows={5}
+                className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500"
+              />
+              {blastStatus && <p className="text-xs text-brand-400">{blastStatus}</p>}
+              <div className="flex gap-2">
+                <button onClick={() => setBlastOpen(false)} className="flex-1 py-2.5 rounded-lg text-sm bg-white/5 border border-white/10 text-white/60">Cancel</button>
+                <button onClick={sendBlast} className="flex-1 py-2.5 rounded-lg text-sm bg-brand-500 text-black font-semibold hover:bg-brand-400 transition-colors">Send</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -23,6 +23,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [stripeConnected, setStripeConnected] = useState(false);
   const [connectingStripe, setConnectingStripe] = useState(false);
+  const [revenue, setRevenue] = useState(0);
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -38,6 +39,8 @@ export default function DashboardPage() {
     }
     setUser(parsedUser);
     fetchMyEvents(token);
+    fetch(`${API_URL}/api/organizer/analytics`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => { if (d.data) setRevenue(d.data.totalRevenue); }).catch(() => {});
   }, [router]);
 
   async function fetchMyEvents(token: string) {
@@ -126,13 +129,17 @@ export default function DashboardPage() {
             <Search className="w-4 h-4 text-brand-400" />
             Find Attendee
           </Link>
+          <Link href="/dashboard/analytics" className="flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-3 rounded-xl text-sm font-medium text-white hover:border-brand-500/30 transition-colors">
+            <TrendingUp className="w-4 h-4 text-brand-400" />
+            Analytics
+          </Link>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           <StatCard icon={<Calendar className="w-5 h-5" />} label="Events" value={String(events.length)} />
           <StatCard icon={<Ticket className="w-5 h-5" />} label="Tickets Sold" value={String(totalSold)} />
-          <StatCard icon={<TrendingUp className="w-5 h-5" />} label="Revenue" value="€0" />
+          <StatCard icon={<TrendingUp className="w-5 h-5" />} label="Revenue" value={`€${revenue.toFixed(2)}`} />
           <StatCard icon={<Ticket className="w-5 h-5" />} label="Active" value={String(events.filter(e => e.status === "PUBLISHED").length)} />
         </div>
 
