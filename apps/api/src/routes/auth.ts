@@ -251,7 +251,36 @@ authRouter.post("/logout", (_req, res) => {
 authRouter.get("/me", authenticate, async (req: AuthRequest, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.userId },
-    select: { id: true, email: true, firstName: true, lastName: true, role: true, avatarUrl: true },
+    select: { id: true, email: true, firstName: true, lastName: true, role: true, avatarUrl: true, phone: true, emailVerified: true, createdAt: true,
+      _count: { select: { orders: true, tickets: true, following: true } } },
   });
   res.json({ success: true, data: user });
+});
+
+// Update profile (name, avatar, phone). Email/role are not editable here.
+authRouter.patch("/me", authenticate, async (req: AuthRequest, res) => {
+  const { firstName, lastName, avatarUrl, phone } = req.body;
+  const user = await prisma.user.update({
+    where: { id: req.user!.userId },
+    data: {
+      ...(firstName !== undefined && { firstName }),
+      ...(lastName !== undefined && { lastName }),
+      ...(avatarUrl !== undefined && { avatarUrl }),
+      ...(phone !== undefined && { phone }),
+    },
+    select: { id: true, email: true, firstName: true, lastName: true, role: true, avatarUrl: true, phone: true },
+  });
+  res.json({ success: true, data: user });
+});
+
+// Upgrade an attendee account to a business (organizer) account.
+authRouter.post("/upgrade-to-business", authenticate, async (req: AuthRequest, res) => {
+  const user = await prisma.user.update({
+    where: { id: req.user!.userId },
+    data: { role: "ORGANIZER" },
+    select: { id: true, email: true, firstName: true, lastName: true, role: true, avatarUrl: true },
+  });
+  const token = signToken({ userId: user.id, email: user.email, role: user.role });
+  res.cookie("token", token, COOKIE_OPTIONS);
+  res.json({ success: true, data: { token, user } });
 });
