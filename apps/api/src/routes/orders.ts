@@ -30,6 +30,8 @@ async function resolvePromoter(ref: string | undefined, event: any, buyerId: str
   if (ref === event.organization?.ownerId) return { promoterId: null, rate: 0 };
   const promoter = await prisma.user.findUnique({ where: { id: ref } });
   if (!promoter) return { promoterId: null, rate: 0 };
+  // Business/organizer accounts cannot earn as promoters.
+  if (promoter.role === "ORGANIZER") return { promoterId: null, rate: 0 };
   return { promoterId: promoter.id, rate: event.commissionRate || 0 };
 }
 

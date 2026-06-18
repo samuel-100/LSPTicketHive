@@ -282,11 +282,18 @@ function EventDetailInner() {
     }
   }
 
+  const [isOrganizer, setIsOrganizer] = useState(false);
+  useEffect(() => {
+    const u = localStorage.getItem("user");
+    if (u) { try { setIsOrganizer(JSON.parse(u).role === "ORGANIZER"); } catch {} }
+  }, []);
+
   const [promoteLabel, setPromoteLabel] = useState("Promote & Earn");
   async function promoteEvent() {
     const userStr = localStorage.getItem("user");
     if (!userStr) { window.location.href = "/login"; return; }
     const me = JSON.parse(userStr);
+    if (me.role === "ORGANIZER") { alert("Business accounts can't promote events. Promoting is for attendee accounts."); return; }
     const link = `${window.location.origin}/events/${params.id}?ref=${me.id}`;
     try {
       await navigator.clipboard.writeText(link);
@@ -481,7 +488,7 @@ function EventDetailInner() {
               <ThumbsUp className={`w-4 h-4 ${liked ? "fill-pink-400 text-pink-400" : "text-pink-400"}`} />
               {likeCount > 0 ? likeCount : ""} {liked ? "Liked" : "Like"}
             </button>
-            {event.promotable && (
+            {event.promotable && !isOrganizer && (
               <button
                 onClick={promoteEvent}
                 className="flex items-center gap-2 bg-brand-500/15 border border-brand-500/30 text-brand-400 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-500/25 transition-colors"

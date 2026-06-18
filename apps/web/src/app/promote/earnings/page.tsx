@@ -15,6 +15,8 @@ export default function PromoterEarningsPage() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) { router.push("/login"); return; }
+    const u = localStorage.getItem("user");
+    if (u && JSON.parse(u).role === "ORGANIZER") { router.push("/dashboard"); return; }
     fetch(`${API_URL}/api/promoter/earnings`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json()).then(d => { setData(d.data); setLoading(false); })
       .catch(() => setLoading(false));

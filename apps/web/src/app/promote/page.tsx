@@ -21,7 +21,11 @@ export default function PromotePage() {
 
   useEffect(() => {
     const u = localStorage.getItem("user");
-    if (u) setMe(JSON.parse(u));
+    if (u) {
+      const parsed = JSON.parse(u);
+      if (parsed.role === "ORGANIZER") { window.location.href = "/dashboard"; return; }
+      setMe(parsed);
+    }
     fetch(`${API_URL}/api/promoter/marketplace`)
       .then(r => r.json()).then(d => { setEvents(d.data || []); setLoading(false); })
       .catch(() => setLoading(false));
