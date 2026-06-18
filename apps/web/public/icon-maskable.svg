@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Full-bleed green so mask shapes still show brand color -->
+  <rect width="512" height="512" fill="#22c55e"/>
+  <!-- Ticket mark scaled into the ~80% safe zone for maskable icons -->
+  <g transform="translate(256 256) scale(0.62) translate(-256 -256)" fill="#0a0a0a">
+    <path d="M150 176h212c13 0 24 11 24 24v34a34 34 0 0 0 0 68v34c0 13-11 24-24 24H150c-13 0-24-11-24-24v-34a34 34 0 0 0 0-68v-34c0-13 11-24 24-24z"/>
+  </g>
+  <line x1="256" y1="200" x2="256" y2="312" stroke="#22c55e" stroke-width="11" stroke-dasharray="15 12" stroke-linecap="round"/>
+</svg>
