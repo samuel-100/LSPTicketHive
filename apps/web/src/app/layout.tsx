@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Navbar from "./components/Navbar";
 import PWA from "./components/PWA";
+import BottomNav from "./components/BottomNav";
 
 export const metadata: Metadata = {
   title: "LSPTicketHive — Events & Tickets",
@@ -39,7 +40,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-[#0a0a0a]">
         <Navbar />
-        <main className="pt-14">{children}</main>
+        <main className="pt-14 pb-16 md:pb-0">{children}</main>
+        <BottomNav />
         <PWA />
       </body>
     </html>
