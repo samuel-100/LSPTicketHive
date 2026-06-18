@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Ticket, Search, Menu, X, MapPin } from "lucide-react";
+import { Ticket, Search, Menu, X, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -100,13 +100,31 @@ export default function Navbar() {
   return (
     <header className="fixed top-0 w-full bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/5 z-50">
       <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
-            <Ticket className="w-5 h-5 text-black" />
+        {/* Back / Forward + Logo */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => router.back()}
+              aria-label="Go back"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 active:scale-90 transition-all"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => router.forward()}
+              aria-label="Go forward"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 active:scale-90 transition-all hidden sm:flex"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
-          <span className="text-lg font-bold text-white hidden sm:block">LSPTicketHive</span>
-        </Link>
+          <Link href="/" className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
+              <Ticket className="w-5 h-5 text-black" />
+            </div>
+            <span className="text-lg font-bold text-white hidden sm:block">LSPTicketHive</span>
+          </Link>
+        </div>
 
         {/* Search Bar */}
         <form onSubmit={handleSearch} className="hidden md:flex items-center flex-1 max-w-lg mx-6">
