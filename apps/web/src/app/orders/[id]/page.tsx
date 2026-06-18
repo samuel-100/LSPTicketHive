@@ -23,6 +23,7 @@ function OrderContent() {
   const isSuccess = searchParams.get("success") === "true";
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refunding, setRefunding] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -35,6 +36,23 @@ function OrderContent() {
       .then(data => { setOrder(data.data); setLoading(false); })
       .catch(() => setLoading(false));
   }, [params.id]);
+
+  async function requestRefund() {
+    if (!confirm("Request a refund for this order? Your tickets will be cancelled.")) return;
+    setRefunding(true);
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API_URL}/api/orders/${params.id}/refund`, {
+      method: "POST", headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await res.json();
+    if (data.success) {
+      setOrder(o => o ? { ...o, status: "REFUNDED" } : o);
+      alert("Refund processed. You'll see it back on your card in a few days.");
+    } else {
+      alert(data.error || "Refund failed");
+    }
+    setRefunding(false);
+  }
 
   if (loading) return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white/30">Loading...</div>;
   if (!order) return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white/30">Order not found</div>;
@@ -109,6 +127,28 @@ function OrderContent() {
             <span className="text-white/40">Total</span>
             <span className="text-white font-semibold">€{order.total.toFixed(2)}</span>
           </div>
+        </div>
+
+        {/* Actions */}
+        <div className="mt-4 flex gap-2 print:hidden">
+          <button
+            onClick={() => window.print()}
+            className="flex-1 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors"
+          >
+            Download / Print Receipt
+          </button>
+          {order.status === "COMPLETED" && (
+            <button
+              onClick={requestRefund}
+              disabled={refunding}
+              className="flex-1 bg-white/5 border border-red-500/20 text-red-400 py-2.5 rounded-xl text-sm font-medium hover:bg-red-500/10 disabled:opacity-50 transition-colors"
+            >
+              {refunding ? "Processing…" : "Request Refund"}
+            </button>
+          )}
+          {order.status === "REFUNDED" && (
+            <div className="flex-1 text-center py-2.5 text-sm text-white/40">Refunded</div>
+          )}
         </div>
       </div>
     </div>

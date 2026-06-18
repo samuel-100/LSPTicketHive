@@ -197,6 +197,51 @@ ordersRouter.get("/my", authenticate, async (req: AuthRequest, res) => {
   res.json({ success: true, data: orders });
 });
 
+// Refund / cancel an order. Allowed for the buyer OR the event's organizer.
+ordersRouter.post("/:id/refund", authenticate, async (req: AuthRequest, res) => {
+  const order = await prisma.order.findUnique({
+    where: { id: req.params.id },
+    include: { event: { include: { organization: true } }, tickets: true },
+  });
+  if (!order) return res.status(404).json({ success: false, error: "Order not found" });
+
+  const isBuyer = order.userId === req.user!.userId;
+  const isOwner = order.event.organization.ownerId === req.user!.userId;
+  if (!isBuyer && !isOwner) {
+    return res.status(403).json({ success: false, error: "Not authorized to refund this order" });
+  }
+  if (order.status === "REFUNDED" || order.status === "CANCELLED") {
+    return res.status(400).json({ success: false, error: "Order already refunded or cancelled" });
+  }
+  // Don't refund tickets already used at the door.
+  if (order.tickets.some((t: any) => t.status === "USED")) {
+    return res.status(400).json({ success: false, error: "Cannot refund — a ticket has already been checked in" });
+  }
+
+  // Issue the Stripe refund for paid orders.
+  if (order.total > 0 && order.stripePaymentId) {
+    try {
+      await stripe.refunds.create({ payment_intent: order.stripePaymentId });
+    } catch (err: any) {
+      console.error("Stripe refund failed:", err?.message);
+      return res.status(502).json({ success: false, error: "Payment refund failed — contact support" });
+    }
+  }
+
+  // Mark order refunded, cancel tickets, return inventory.
+  await prisma.$transaction(async (tx: any) => {
+    await tx.order.update({ where: { id: order.id }, data: { status: "REFUNDED" } });
+    await tx.ticket.updateMany({ where: { orderId: order.id }, data: { status: "CANCELLED" } });
+    const counts: Record<string, number> = {};
+    for (const t of order.tickets) counts[t.ticketTypeId] = (counts[t.ticketTypeId] || 0) + 1;
+    for (const [ttId, n] of Object.entries(counts)) {
+      await tx.ticketType.update({ where: { id: ttId }, data: { sold: { decrement: n } } });
+    }
+  });
+
+  res.json({ success: true, data: { refunded: true, amount: order.total } });
+});
+
 ordersRouter.get("/:id", authenticate, async (req: AuthRequest, res) => {
   const order = await prisma.order.findFirst({
     where: { id: req.params.id, userId: req.user!.userId },

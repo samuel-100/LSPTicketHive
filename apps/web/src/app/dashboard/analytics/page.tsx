@@ -18,6 +18,7 @@ interface Analytics {
 export default function AnalyticsPage() {
   const router = useRouter();
   const [data, setData] = useState<Analytics | null>(null);
+  const [earnings, setEarnings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,6 +30,8 @@ export default function AnalyticsPage() {
       .then(r => r.json())
       .then(d => { setData(d.data); setLoading(false); })
       .catch(() => setLoading(false));
+    fetch(`${API_URL}/api/organizer/earnings`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json()).then(d => setEarnings(d.data)).catch(() => {});
   }, [router]);
 
   const maxRev = data?.series.length ? Math.max(...data.series.map(s => s.revenue), 1) : 1;
@@ -54,6 +57,20 @@ export default function AnalyticsPage() {
               <Stat icon={<Ticket className="w-5 h-5" />} label="Tickets Sold" value={String(data.totalSold)} />
               <Stat icon={<TrendingUp className="w-5 h-5" />} label="Orders" value={String(data.totalOrders)} />
             </div>
+
+            {/* Earnings / payout */}
+            {earnings && (
+              <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 mb-8">
+                <h2 className="text-sm font-semibold text-white mb-4">Earnings & payout</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                  <div><div className="text-xs text-white/30">Gross sales</div><div className="text-lg font-bold text-white">€{earnings.gross.toFixed(2)}</div></div>
+                  <div><div className="text-xs text-white/30">Platform fee (2%)</div><div className="text-lg font-bold text-white/60">−€{earnings.platformFees.toFixed(2)}</div></div>
+                  <div><div className="text-xs text-white/30">Net to you</div><div className="text-lg font-bold text-brand-400">€{earnings.net.toFixed(2)}</div></div>
+                  <div><div className="text-xs text-white/30">Refunded</div><div className="text-lg font-bold text-white/60">€{earnings.refunded.toFixed(2)}</div></div>
+                </div>
+                <p className={`text-xs ${earnings.stripeConnected ? "text-white/30" : "text-orange-400"}`}>{earnings.payoutNote}</p>
+              </div>
+            )}
 
             {/* Revenue chart */}
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 mb-8">

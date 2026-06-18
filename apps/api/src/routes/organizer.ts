@@ -57,6 +57,43 @@ organizerRouter.get("/analytics", authenticate, requireRole("ORGANIZER", "ADMIN"
   });
 });
 
+/* ------------------------------ Earnings -------------------------------- */
+// Net earnings = completed-order subtotals minus platform fee. Refunded excluded.
+organizerRouter.get("/earnings", authenticate, requireRole("ORGANIZER", "ADMIN"), async (req: AuthRequest, res) => {
+  const org = await myOrg(req.user!.userId);
+  if (!org) return res.json({ success: true, data: { gross: 0, platformFees: 0, net: 0, refunded: 0, orders: 0, stripeConnected: false } });
+
+  const orders = await prisma.order.findMany({
+    where: { event: { organizationId: org.id } },
+  });
+
+  let gross = 0, platformFees = 0, refunded = 0, completed = 0;
+  for (const o of orders) {
+    if (o.status === "COMPLETED") {
+      gross += o.subtotal;
+      platformFees += o.platformFee;
+      completed++;
+    } else if (o.status === "REFUNDED") {
+      refunded += o.subtotal;
+    }
+  }
+
+  res.json({
+    success: true,
+    data: {
+      gross: Math.round(gross * 100) / 100,
+      platformFees: Math.round(platformFees * 100) / 100,
+      net: Math.round((gross - platformFees) * 100) / 100,
+      refunded: Math.round(refunded * 100) / 100,
+      orders: completed,
+      stripeConnected: !!org.stripeAccountId,
+      payoutNote: org.stripeAccountId
+        ? "Funds are transferred to your connected Stripe account automatically per sale."
+        : "Connect a bank account (Stripe) to receive payouts.",
+    },
+  });
+});
+
 /* ---------------------------- CSV attendee export ---------------------------- */
 organizerRouter.get("/events/:id/attendees.csv", authenticate, requireRole("ORGANIZER", "ADMIN"), async (req: AuthRequest, res) => {
   const org = await myOrg(req.user!.userId);
