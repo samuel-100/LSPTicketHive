@@ -78,7 +78,7 @@ export default function HomePage() {
             <CityCard city="New York" image="https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=400&q=80" />
             <CityCard city="Paris" image="https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80" />
             <CityCard city="Berlin" image="https://images.unsplash.com/photo-1560969184-10fe8719e047?w=400&q=80" />
-            <CityCard city="Accra" image="https://images.unsplash.com/photo-1582556172498-1d36c7e75ff8?w=400&q=80" />
+            <CityCard city="Accra" image="https://images.unsplash.com/photo-1605379399642-870262d3d051?w=400&q=80" />
             <CityCard city="Barcelona" image="https://images.unsplash.com/photo-1583422409516-2895a77efded?w=400&q=80" />
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Ticket, Plus, Trash2, Upload, Image } from "lucide-react";
+import { CATEGORY_GROUPS } from "../../lib/categories";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -226,16 +227,11 @@ export default function CreateEventPage() {
                   onChange={e => setForm({ ...form, category: e.target.value })}
                   className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:border-brand-500 transition-colors"
                 >
-                  <option value="Music">Music</option>
-                  <option value="Nightlife">Nightlife</option>
-                  <option value="Food & Drink">Food & Drink</option>
-                  <option value="Arts">Arts</option>
-                  <option value="Sports">Sports</option>
-                  <option value="Tech">Tech</option>
-                  <option value="Business">Business</option>
-                  <option value="Comedy">Comedy</option>
-                  <option value="Community">Community</option>
-                  <option value="Other">Other</option>
+                  {CATEGORY_GROUPS.map(g => (
+                    <optgroup key={g.group} label={g.group}>
+                      {g.items.map(c => <option key={c} value={c}>{c}</option>)}
+                    </optgroup>
+                  ))}
                 </select>
               </div>
             </div>

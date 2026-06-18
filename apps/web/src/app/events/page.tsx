@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Calendar, MapPin, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
+import { TOP_CATEGORIES } from "../lib/categories";
 
 const EventMap = dynamic(() => import("../components/EventMap"), { ssr: false });
 
@@ -126,7 +127,7 @@ function EventsContent() {
 
   const visibleEvents = events.filter(e => inDateRange(e.startDate) && matchesPrice(e));
 
-  const categories = ["Music", "Nightlife", "Food & Drink", "Tech", "Comedy", "Arts", "Sports", "Business"];
+  const categories = TOP_CATEGORIES;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">

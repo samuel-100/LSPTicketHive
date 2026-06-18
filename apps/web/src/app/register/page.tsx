@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Ticket } from "lucide-react";
+import { TOP_CATEGORIES } from "../lib/categories";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -39,7 +40,7 @@ function RegisterForm() {
   const defaultRole = searchParams.get("role") === "organizer" ? "ORGANIZER" : "ATTENDEE";
 
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "", role: defaultRole, isPromoter: false, promoterInterests: [] as string[] });
-  const INTERESTS = ["Music", "Nightlife", "Food & Drink", "Tech", "Comedy", "Arts", "Sports", "Business"];
+  const INTERESTS = TOP_CATEGORIES;
   function toggleInterest(i: string) {
     setForm(f => ({ ...f, promoterInterests: f.promoterInterests.includes(i) ? f.promoterInterests.filter(x => x !== i) : [...f.promoterInterests, i] }));
   }

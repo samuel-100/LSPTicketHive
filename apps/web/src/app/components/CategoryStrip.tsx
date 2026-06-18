@@ -2,18 +2,21 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Music, Moon, UtensilsCrossed, Cpu, Mic, Drama, Trophy, Briefcase } from "lucide-react";
+import { Music, Disc3, Mic2, Moon, Mic, Drama, UtensilsCrossed, Cpu, Trophy, PartyPopper } from "lucide-react";
 
 // Vibrant, high-contrast gradients + matching photo so each tile pops.
 const CATEGORIES = [
-  { name: "Music", icon: Music, grad: "from-fuchsia-600 to-purple-700", img: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&q=70" },
+  { name: "Afrobeats", icon: Music, grad: "from-orange-500 to-pink-600", img: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=400&q=70" },
+  { name: "Amapiano", icon: Disc3, grad: "from-purple-600 to-indigo-700", img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&q=70" },
+  { name: "Hip-Hop & Rap", icon: Mic2, grad: "from-yellow-500 to-orange-600", img: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=70" },
   { name: "Nightlife", icon: Moon, grad: "from-indigo-600 to-blue-800", img: "https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=400&q=70" },
-  { name: "Food & Drink", icon: UtensilsCrossed, grad: "from-orange-500 to-red-600", img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=70" },
-  { name: "Tech", icon: Cpu, grad: "from-cyan-500 to-blue-700", img: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=70" },
+  { name: "Live Music", icon: Music, grad: "from-fuchsia-600 to-purple-700", img: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&q=70" },
   { name: "Comedy", icon: Mic, grad: "from-amber-500 to-orange-600", img: "https://images.unsplash.com/photo-1585699324551-f6c309eedeca?w=400&q=70" },
   { name: "Arts", icon: Drama, grad: "from-pink-500 to-rose-600", img: "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=400&q=70" },
+  { name: "Food & Drink", icon: UtensilsCrossed, grad: "from-orange-500 to-red-600", img: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&q=70" },
+  { name: "Tech", icon: Cpu, grad: "from-cyan-500 to-blue-700", img: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=70" },
   { name: "Sports", icon: Trophy, grad: "from-green-500 to-emerald-700", img: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=400&q=70" },
-  { name: "Business", icon: Briefcase, grad: "from-slate-500 to-gray-700", img: "https://images.unsplash.com/photo-1497032205916-ac775f0649ae?w=400&q=70" },
+  { name: "Festival", icon: PartyPopper, grad: "from-rose-500 to-fuchsia-700", img: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&q=70" },
 ];
 
 export default function CategoryStrip() {
