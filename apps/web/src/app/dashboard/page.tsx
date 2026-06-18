@@ -131,7 +131,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           <StatCard icon={<Calendar className="w-5 h-5" />} label="Events" value={String(events.length)} />
           <StatCard icon={<Ticket className="w-5 h-5" />} label="Tickets Sold" value={String(totalSold)} />
-          <StatCard icon={<TrendingUp className="w-5 h-5" />} label="Revenue" value={`€${revenue.toFixed(2)}`} />
+          <StatCard icon={<TrendingUp className="w-5 h-5" />} label="Revenue" value={`€${revenue.toFixed(2)}`} accent />
           <StatCard icon={<Ticket className="w-5 h-5" />} label="Active" value={String(events.filter(e => e.status === "PUBLISHED").length)} />
         </div>
 
@@ -197,10 +197,11 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: boolean }) {
   return (
-    <div className="bg-white/[0.02] border border-white/5 rounded-xl p-5">
-      <div className="text-brand-400 mb-3">{icon}</div>
+    <div className={`relative overflow-hidden rounded-2xl p-5 border transition-all hover:-translate-y-0.5 ${accent ? "bg-gradient-to-br from-brand-500/15 to-transparent border-brand-500/20" : "bg-white/[0.02] border-white/5 hover:border-white/10"}`}>
+      <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-brand-500/5 blur-xl" />
+      <div className={`mb-3 w-9 h-9 rounded-lg flex items-center justify-center ${accent ? "bg-brand-500/20 text-brand-400" : "bg-white/5 text-brand-400"}`}>{icon}</div>
       <div className="text-2xl font-bold text-white">{value}</div>
       <div className="text-sm text-white/30">{label}</div>
     </div>
