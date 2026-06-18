@@ -14,11 +14,49 @@ export default function Navbar() {
   const [location, setLocation] = useState("");
   const [locationOpen, setLocationOpen] = useState(false);
   const [detecting, setDetecting] = useState(false);
+  const [suggestions, setSuggestions] = useState<{ name: string; label: string }[]>([]);
+  const [searchingCity, setSearchingCity] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
     if (stored) setUser(JSON.parse(stored));
   }, []);
+
+  // Worldwide place autocomplete via Photon (OpenStreetMap, no API key needed).
+  useEffect(() => {
+    const q = location.trim();
+    if (q.length < 2) { setSuggestions([]); return; }
+    let cancelled = false;
+    setSearchingCity(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&layer=city&layer=district&layer=locality`);
+        const data = await res.json();
+        if (cancelled) return;
+        const seen = new Set<string>();
+        const opts = (data.features || [])
+          .map((f: any) => {
+            const p = f.properties || {};
+            const name = p.name || p.city || "";
+            const parts = [name, p.state, p.country].filter(Boolean);
+            return { name, label: parts.join(", ") };
+          })
+          .filter((o: any) => o.name && !seen.has(o.label) && seen.add(o.label));
+        setSuggestions(opts);
+      } catch {
+        if (!cancelled) setSuggestions([]);
+      }
+      if (!cancelled) setSearchingCity(false);
+    }, 300);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [location]);
+
+  function chooseCity(city: string) {
+    setLocation(city);
+    setSuggestions([]);
+    setLocationOpen(false);
+    router.push(`/events?city=${encodeURIComponent(city)}`);
+  }
 
   function detectLocation() {
     setDetecting(true);
@@ -99,44 +137,69 @@ export default function Navbar() {
                       value={location}
                       onChange={e => setLocation(e.target.value)}
                       onKeyDown={e => {
-                        if (e.key === "Enter") {
-                          setLocationOpen(false);
-                          const params = new URLSearchParams();
-                          if (location.trim()) params.set("city", location.trim());
-                          router.push(`/events?${params.toString()}`);
+                        if (e.key === "Enter" && location.trim()) {
+                          chooseCity(suggestions[0]?.name || location.trim());
                         }
                       }}
-                      placeholder="Type any city…"
+                      placeholder="Search any city or place…"
                       className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-brand-500"
                     />
                   </div>
-                  <button
-                    onClick={detectLocation}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
-                  >
-                    <svg className="w-5 h-5 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/><circle cx="12" cy="12" r="8"/></svg>
-                    <span className="text-sm text-white">{detecting ? "Detecting..." : "Use my current location"}</span>
-                  </button>
-                  <button
-                    onClick={() => { setLocation(""); setLocationOpen(false); router.push("/events"); }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left border-t border-white/5"
-                  >
-                    <svg className="w-5 h-5 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M12 17v4m-4 0h8"/></svg>
-                    <span className="text-sm text-white">Browse online events</span>
-                  </button>
-                  <div className="border-t border-white/5">
-                    <div className="px-4 py-2 text-xs text-white/20">Popular cities</div>
-                    {["Dublin", "London", "Belfast", "Lagos", "New York", "Berlin", "Paris", "Accra"].map(c => (
+
+                  {/* Live worldwide suggestions while typing */}
+                  {location.trim().length >= 2 && (
+                    <div className="max-h-64 overflow-y-auto border-b border-white/5">
+                      {searchingCity && suggestions.length === 0 && (
+                        <div className="px-4 py-3 text-sm text-white/30">Searching…</div>
+                      )}
+                      {!searchingCity && suggestions.length === 0 && (
+                        <div className="px-4 py-3 text-sm text-white/30">No places found</div>
+                      )}
+                      {suggestions.map((s, i) => (
+                        <button
+                          key={`${s.label}-${i}`}
+                          onClick={() => chooseCity(s.name)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors text-left"
+                        >
+                          <MapPin className="w-4 h-4 text-brand-400 shrink-0" />
+                          <span className="text-sm text-white/80 truncate">{s.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Default options when not typing */}
+                  {location.trim().length < 2 && (
+                    <>
                       <button
-                        key={c}
-                        onClick={() => { setLocation(c); setLocationOpen(false); router.push(`/events?city=${encodeURIComponent(c)}`); }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors text-left"
+                        onClick={detectLocation}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
                       >
-                        <svg className="w-4 h-4 text-white/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                        <span className="text-sm text-white/60">{c}</span>
+                        <svg className="w-5 h-5 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/><circle cx="12" cy="12" r="8"/></svg>
+                        <span className="text-sm text-white">{detecting ? "Detecting..." : "Use my current location"}</span>
                       </button>
-                    ))}
-                  </div>
+                      <button
+                        onClick={() => { setLocation(""); setLocationOpen(false); router.push("/events"); }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left border-t border-white/5"
+                      >
+                        <svg className="w-5 h-5 text-white/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M12 17v4m-4 0h8"/></svg>
+                        <span className="text-sm text-white">Browse online events</span>
+                      </button>
+                      <div className="border-t border-white/5">
+                        <div className="px-4 py-2 text-xs text-white/20">Popular cities</div>
+                        {["Dublin", "London", "Belfast", "Lagos", "New York", "Berlin", "Paris", "Accra"].map(c => (
+                          <button
+                            key={c}
+                            onClick={() => chooseCity(c)}
+                            className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors text-left"
+                          >
+                            <svg className="w-4 h-4 text-white/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            <span className="text-sm text-white/60">{c}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
