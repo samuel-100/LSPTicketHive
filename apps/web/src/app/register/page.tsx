@@ -38,7 +38,11 @@ function RegisterForm() {
   const searchParams = useSearchParams();
   const defaultRole = searchParams.get("role") === "organizer" ? "ORGANIZER" : "ATTENDEE";
 
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "", role: defaultRole });
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "", role: defaultRole, isPromoter: false, promoterInterests: [] as string[] });
+  const INTERESTS = ["Music", "Nightlife", "Food & Drink", "Tech", "Comedy", "Arts", "Sports", "Business"];
+  function toggleInterest(i: string) {
+    setForm(f => ({ ...f, promoterInterests: f.promoterInterests.includes(i) ? f.promoterInterests.filter(x => x !== i) : [...f.promoterInterests, i] }));
+  }
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -200,6 +204,43 @@ function RegisterForm() {
                 className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
               />
             </div>
+
+            {/* Promoter opt-in — attendees only */}
+            {form.role === "ATTENDEE" && (
+              <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <div className="text-sm font-medium text-white">I also want to promote events & earn 💸</div>
+                    <div className="text-xs text-white/40">Share events and earn commission on tickets you sell.</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, isPromoter: !form.isPromoter })}
+                    className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${form.isPromoter ? "bg-brand-500" : "bg-white/10"}`}
+                  >
+                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all ${form.isPromoter ? "left-6" : "left-0.5"}`} />
+                  </button>
+                </label>
+                {form.isPromoter && (
+                  <div className="mt-4 pt-4 border-t border-white/5">
+                    <div className="text-xs text-white/50 mb-2">What do you like to promote?</div>
+                    <div className="flex flex-wrap gap-2">
+                      {INTERESTS.map(i => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => toggleInterest(i)}
+                          className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.promoterInterests.includes(i) ? "bg-brand-500 text-black border-brand-500 font-medium" : "bg-white/5 text-white/60 border-white/10 hover:border-white/30"}`}
+                        >
+                          {i}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}

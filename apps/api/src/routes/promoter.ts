@@ -20,20 +20,35 @@ promoterRouter.get("/marketplace", async (req, res) => {
     take: 50,
   });
 
-  res.json({
-    success: true,
-    data: events.map((e: any) => {
-      const min = e.ticketTypes.length ? Math.min(...e.ticketTypes.map((t: any) => t.price)) : 0;
-      const max = e.ticketTypes.length ? Math.max(...e.ticketTypes.map((t: any) => t.price)) : 0;
-      // Rough earnings example: commission on the cheapest paid ticket.
-      const exampleEarn = Math.round(max * (e.commissionRate / 100) * 100) / 100;
-      return {
-        id: e.id, title: e.title, coverImageUrl: e.coverImageUrl, city: e.city, venue: e.venue,
-        startDate: e.startDate, category: e.category, organization: e.organization,
-        commissionRate: e.commissionRate, minPrice: min, maxPrice: max, exampleEarn,
-      };
-    }),
+  // If logged in, prioritise events matching the promoter's interests.
+  let interests: string[] = [];
+  const token = req.cookies?.token || req.headers.authorization?.replace("Bearer ", "");
+  if (token) {
+    try {
+      const jwt = require("jsonwebtoken");
+      const payload = jwt.verify(token, process.env.JWT_SECRET || "dev-secret-change-in-production");
+      const u = await prisma.user.findUnique({ where: { id: payload.userId } });
+      interests = u?.promoterInterests || [];
+    } catch { /* ignore */ }
+  }
+
+  let mapped = events.map((e: any) => {
+    const min = e.ticketTypes.length ? Math.min(...e.ticketTypes.map((t: any) => t.price)) : 0;
+    const max = e.ticketTypes.length ? Math.max(...e.ticketTypes.map((t: any) => t.price)) : 0;
+    const exampleEarn = Math.round(max * (e.commissionRate / 100) * 100) / 100;
+    return {
+      id: e.id, title: e.title, coverImageUrl: e.coverImageUrl, city: e.city, venue: e.venue,
+      startDate: e.startDate, category: e.category, organization: e.organization,
+      commissionRate: e.commissionRate, minPrice: min, maxPrice: max, exampleEarn,
+      matchesInterest: interests.includes(e.category),
+    };
   });
+
+  if (interests.length) {
+    mapped = mapped.sort((a: any, b: any) => Number(b.matchesInterest) - Number(a.matchesInterest));
+  }
+
+  res.json({ success: true, data: mapped });
 });
 
 // My promotions: distinct events I've driven sales for + my earnings.

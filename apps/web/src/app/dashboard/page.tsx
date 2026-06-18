@@ -129,15 +129,15 @@ export default function DashboardPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-          <StatCard icon={<Calendar className="w-5 h-5" />} label="Events" value={String(events.length)} />
-          <StatCard icon={<Ticket className="w-5 h-5" />} label="Tickets Sold" value={String(totalSold)} />
-          <StatCard icon={<TrendingUp className="w-5 h-5" />} label="Revenue" value={`€${revenue.toFixed(2)}`} accent />
-          <StatCard icon={<Ticket className="w-5 h-5" />} label="Active" value={String(events.filter(e => e.status === "PUBLISHED").length)} />
+          <StatCard href="#your-events" icon={<Calendar className="w-5 h-5" />} label="Events" value={String(events.length)} />
+          <StatCard href="/dashboard/analytics" icon={<Ticket className="w-5 h-5" />} label="Tickets Sold" value={String(totalSold)} />
+          <StatCard href="/dashboard/analytics" icon={<TrendingUp className="w-5 h-5" />} label="Revenue" value={`€${revenue.toFixed(2)}`} accent />
+          <StatCard href="#your-events" icon={<Ticket className="w-5 h-5" />} label="Active" value={String(events.filter(e => e.status === "PUBLISHED").length)} />
         </div>
 
         {/* Events List */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-white">Your Events</h2>
+          <h2 id="your-events" className="text-xl font-semibold text-white scroll-mt-20">Your Events</h2>
           <Link href="/dashboard/create" className="text-brand-400 text-sm font-medium hover:text-brand-300 transition-colors">
             + New Event
           </Link>
@@ -197,13 +197,14 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: string; accent?: boolean }) {
-  return (
-    <div className={`relative overflow-hidden rounded-2xl p-5 border transition-all hover:-translate-y-0.5 ${accent ? "bg-gradient-to-br from-brand-500/15 to-transparent border-brand-500/20" : "bg-white/[0.02] border-white/5 hover:border-white/10"}`}>
+function StatCard({ icon, label, value, accent, href }: { icon: React.ReactNode; label: string; value: string; accent?: boolean; href?: string }) {
+  const inner = (
+    <div className={`relative overflow-hidden rounded-2xl p-5 border transition-all hover:-translate-y-0.5 h-full ${accent ? "bg-gradient-to-br from-brand-500/15 to-transparent border-brand-500/20 hover:border-brand-500/40" : "bg-white/[0.02] border-white/5 hover:border-white/15"}`}>
       <div className="absolute -right-4 -top-4 w-20 h-20 rounded-full bg-brand-500/5 blur-xl" />
       <div className={`mb-3 w-9 h-9 rounded-lg flex items-center justify-center ${accent ? "bg-brand-500/20 text-brand-400" : "bg-white/5 text-brand-400"}`}>{icon}</div>
       <div className="text-2xl font-bold text-white">{value}</div>
       <div className="text-sm text-white/30">{label}</div>
     </div>
   );
+  return href ? <Link href={href}>{inner}</Link> : inner;
 }

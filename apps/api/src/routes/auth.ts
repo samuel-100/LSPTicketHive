@@ -30,6 +30,8 @@ const registerSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   role: z.enum(["ATTENDEE", "ORGANIZER"]).default("ATTENDEE"),
+  isPromoter: z.boolean().optional(),
+  promoterInterests: z.array(z.string()).optional(),
 });
 
 const loginSchema = z.object({
@@ -54,6 +56,9 @@ authRouter.post("/register", async (req, res) => {
         firstName: input.firstName,
         lastName: input.lastName,
         role: input.role,
+        // Organizers can't be promoters; only attendees can opt in.
+        isPromoter: input.role === "ATTENDEE" ? !!input.isPromoter : false,
+        promoterInterests: input.role === "ATTENDEE" && input.isPromoter ? (input.promoterInterests || []) : [],
       },
     });
 
@@ -252,14 +257,17 @@ authRouter.get("/me", authenticate, async (req: AuthRequest, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.userId },
     select: { id: true, email: true, firstName: true, lastName: true, role: true, avatarUrl: true, phone: true, emailVerified: true, createdAt: true,
+      isPromoter: true, promoterInterests: true, promoterBio: true,
       _count: { select: { orders: true, tickets: true, following: true } } },
   });
   res.json({ success: true, data: user });
 });
 
-// Update profile (name, avatar, phone). Email/role are not editable here.
+// Update profile. Email/role not editable. Promoter opt-in only for attendees.
 authRouter.patch("/me", authenticate, async (req: AuthRequest, res) => {
-  const { firstName, lastName, avatarUrl, phone } = req.body;
+  const { firstName, lastName, avatarUrl, phone, isPromoter, promoterInterests, promoterBio } = req.body;
+  const me = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+  const canPromote = me?.role === "ATTENDEE";
   const user = await prisma.user.update({
     where: { id: req.user!.userId },
     data: {
@@ -267,8 +275,11 @@ authRouter.patch("/me", authenticate, async (req: AuthRequest, res) => {
       ...(lastName !== undefined && { lastName }),
       ...(avatarUrl !== undefined && { avatarUrl }),
       ...(phone !== undefined && { phone }),
+      ...(canPromote && isPromoter !== undefined && { isPromoter: !!isPromoter }),
+      ...(canPromote && promoterInterests !== undefined && { promoterInterests }),
+      ...(canPromote && promoterBio !== undefined && { promoterBio }),
     },
-    select: { id: true, email: true, firstName: true, lastName: true, role: true, avatarUrl: true, phone: true },
+    select: { id: true, email: true, firstName: true, lastName: true, role: true, avatarUrl: true, phone: true, isPromoter: true, promoterInterests: true, promoterBio: true },
   });
   res.json({ success: true, data: user });
 });
