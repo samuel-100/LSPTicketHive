@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, MapPin, Clock, Users, Minus, Plus, Ticket, ArrowLeft } from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Minus, Plus, Ticket, ArrowLeft, CalendarPlus } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -123,6 +123,50 @@ export default function EventDetailPage() {
     setIsFollowing(!isFollowing);
   }
 
+  // Format a date as the compact UTC stamp calendar apps expect: 20260704T190000Z
+  function toCalStamp(iso: string) {
+    return new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  }
+
+  function googleCalendarUrl() {
+    if (!event) return "#";
+    const loc = [event.venue, event.city, event.country].filter(Boolean).join(", ");
+    const params = new URLSearchParams({
+      action: "TEMPLATE",
+      text: event.title,
+      dates: `${toCalStamp(event.startDate)}/${toCalStamp(event.endDate)}`,
+      details: `${event.shortDesc || ""}\n\nGet tickets: ${typeof window !== "undefined" ? window.location.href : ""}`,
+      location: loc,
+    });
+    return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  }
+
+  function downloadIcs() {
+    if (!event) return;
+    const loc = [event.venue, event.city, event.country].filter(Boolean).join(", ");
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//LSPTicketHive//EN",
+      "BEGIN:VEVENT",
+      `UID:${event.id}@lsptickethive.com`,
+      `DTSTART:${toCalStamp(event.startDate)}`,
+      `DTEND:${toCalStamp(event.endDate)}`,
+      `SUMMARY:${event.title}`,
+      `DESCRIPTION:${(event.shortDesc || "").replace(/\n/g, " ")}`,
+      `LOCATION:${loc}`,
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+    const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${event.title.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function handleCheckout() {
     setCheckoutLoading(true);
     const token = localStorage.getItem("token");
@@ -211,6 +255,26 @@ export default function EventDetailPage() {
               <Users className="w-4 h-4 text-brand-400" />
               {event.totalCapacity} capacity
             </span>
+          </div>
+
+          {/* Add to calendar */}
+          <div className="flex flex-wrap gap-3 mt-6">
+            <a
+              href={googleCalendarUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-lg text-sm font-medium text-white hover:border-brand-500/40 transition-colors"
+            >
+              <CalendarPlus className="w-4 h-4 text-brand-400" />
+              Add to Google Calendar
+            </a>
+            <button
+              onClick={downloadIcs}
+              className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-lg text-sm font-medium text-white hover:border-brand-500/40 transition-colors"
+            >
+              <Calendar className="w-4 h-4 text-brand-400" />
+              Apple / Outlook (.ics)
+            </button>
           </div>
           </div>
         </div>

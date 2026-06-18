@@ -170,8 +170,9 @@ function EventsContent() {
                           <span className="text-xs font-medium text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full">{status}</span>
                         )}
                         <h3 className="font-semibold text-white mt-1 group-hover:text-brand-400 transition-colors truncate">{event.title}</h3>
-                        <div className="text-sm text-white/40 mt-1">
-                          {new Date(event.startDate).toLocaleDateString("en-IE", { weekday: "long" })} at {new Date(event.startDate).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}
+                        <div className="flex items-center gap-1.5 text-sm text-white/40 mt-1">
+                          <Calendar className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+                          {new Date(event.startDate).toLocaleDateString("en-IE", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} · {new Date(event.startDate).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}
                         </div>
                         {event.venue && (
                           <div className="text-sm text-white/30 mt-0.5">{event.city} · {event.venue}</div>
