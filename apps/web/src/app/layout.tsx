@@ -1,13 +1,29 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Navbar from "./components/Navbar";
+import PWA from "./components/PWA";
 
 export const metadata: Metadata = {
   title: "LSPTicketHive — Events & Tickets",
   description: "Discover events, buy tickets, and sell your own. Lower fees, faster payouts.",
   icons: {
     icon: "/favicon.svg",
+    apple: "/icon.svg",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "LSPTicketHive",
+  },
+  manifest: "/manifest.webmanifest",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0a0a0a",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -24,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-[#0a0a0a]">
         <Navbar />
         <main className="pt-14">{children}</main>
+        <PWA />
       </body>
     </html>
   );

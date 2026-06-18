@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#22c55e"/>
+  <g transform="translate(256,256)">
+    <path d="M-120 -56h240v30a30 30 0 0 1 0 60v30a30 30 0 0 1-30 30H-90a30 30 0 0 1-30-30v-30a30 30 0 0 1 0-60v-30a30 30 0 0 1 30-30z" fill="none" stroke="#000" stroke-width="20"/>
+    <line x1="-40" y1="-56" x2="-40" y2="94" stroke="#000" stroke-width="14" stroke-dasharray="26 18"/>
+  </g>
+</svg>
