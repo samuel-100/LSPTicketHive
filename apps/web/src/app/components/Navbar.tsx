@@ -111,8 +111,8 @@ export default function Navbar() {
   const isActive = (path: string) => pathname === path;
 
   return (
-    <header className="fixed top-0 w-full bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/5 z-50">
-      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+    <header className="fixed top-0 w-full bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/5 z-50" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
         {/* Back / Forward (desktop web only) + Logo */}
         <div className="flex items-center gap-2">
           {/* Browser-style nav arrows: desktop only — mobile uses the bottom tab bar */}

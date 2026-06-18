@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    statusBarStyle: "default",
     title: "LSPTicketHive",
   },
   manifest: "/manifest.webmanifest",
@@ -24,7 +24,6 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -40,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-[#0a0a0a]">
         <Navbar />
-        <main className="pt-14 pb-16 md:pb-0">{children}</main>
+        <main className="pb-16 md:pb-0" style={{ paddingTop: "calc(3.5rem + env(safe-area-inset-top))" }}>{children}</main>
         <BottomNav />
         <PWA />
       </body>
