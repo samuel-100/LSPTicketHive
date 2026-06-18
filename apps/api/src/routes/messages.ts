@@ -103,9 +103,11 @@ messagesRouter.get("/:id", authenticate, async (req: AuthRequest, res) => {
   if (!convo || (convo.userAId !== me && convo.userBId !== me)) {
     return res.status(403).json({ success: false, error: "Not your conversation" });
   }
-  const messages = await prisma.message.findMany({ where: { conversationId: convo.id }, orderBy: { createdAt: "asc" } });
+  const rows = await prisma.message.findMany({ where: { conversationId: convo.id }, orderBy: { createdAt: "asc" } });
   await prisma.message.updateMany({ where: { conversationId: convo.id, senderId: { not: me }, readAt: null }, data: { readAt: new Date() } });
   const other = await withOther(convo, me);
+  // Tag each message server-side so the client never has to guess who "me" is.
+  const messages = rows.map((m: any) => ({ ...m, mine: m.senderId === me }));
   res.json({ success: true, data: { other, messages, conversationId: convo.id } });
 });
 

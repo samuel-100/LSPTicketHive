@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Send, MessageCircle } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, Smile } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const EMOJIS = ["😀","😂","🥰","😎","😍","🤝","🙌","👏","🔥","🎉","🎟️","💸","💰","✅","👍","👎","❤️","🙏","💯","⭐","🎵","🕺","💃","🍻","📍","📅","⏰","😅","😢","😡","🤔","👀"];
 
 export default function MessagesPage() {
   return (
@@ -23,6 +24,7 @@ function MessagesInner() {
   const [active, setActive] = useState<string | null>(searchParams.get("c"));
   const [thread, setThread] = useState<any>(null);
   const [body, setBody] = useState("");
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -143,13 +145,19 @@ function MessagesInner() {
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-1.5" style={{ backgroundImage: "radial-gradient(circle at 25% 15%, rgba(34,197,94,0.04), transparent 40%)" }}>
                   {thread.messages.map((m: any) => {
-                    const mine = m.senderId === meId;
+                    // Server tags m.mine; fall back to id comparison if absent.
+                    const mine = m.mine ?? (m.senderId === meId);
                     const time = new Date(m.createdAt).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" });
                     return (
-                      <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow-sm ${mine ? "bg-brand-500 text-black rounded-br-md" : "bg-[#262626] text-white rounded-bl-md"}`}>
+                      <div key={m.id} className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
+                        {!mine && (
+                          <div className="w-7 h-7 rounded-full bg-brand-500/10 flex items-center justify-center shrink-0 overflow-hidden">
+                            {thread.other?.avatarUrl ? <img src={thread.other.avatarUrl} className="w-full h-full object-cover" alt="" /> : <span className="text-brand-400 text-[11px] font-bold">{thread.other?.firstName?.[0]}</span>}
+                          </div>
+                        )}
+                        <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow-sm ${mine ? "bg-brand-500 text-black rounded-br-md" : "bg-[#2a3942] text-white rounded-bl-md"}`}>
                           <span className="whitespace-pre-wrap break-words">{m.body}</span>
-                          <span className={`inline-flex items-center gap-0.5 ml-2 align-bottom text-[10px] ${mine ? "text-black/50" : "text-white/30"}`}>
+                          <span className={`inline-flex items-center gap-0.5 ml-2 align-bottom text-[10px] ${mine ? "text-black/50" : "text-white/40"}`}>
                             {time}
                             {mine && <span>{m.readAt ? "✓✓" : "✓"}</span>}
                           </span>
@@ -159,9 +167,17 @@ function MessagesInner() {
                   })}
                   <div ref={bottomRef} />
                 </div>
-                <div className="p-3 border-t border-white/5 flex gap-2">
-                  <input value={body} onChange={e => setBody(e.target.value)} onKeyDown={e => e.key === "Enter" && send()} placeholder="Type a message…" className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500" />
-                  <button onClick={send} className="bg-brand-500 text-black w-11 h-11 rounded-xl flex items-center justify-center hover:bg-brand-400 transition-colors"><Send className="w-4 h-4" /></button>
+                <div className="p-3 border-t border-white/5 flex items-center gap-2 relative">
+                  {emojiOpen && (
+                    <div className="absolute bottom-16 left-3 bg-[#1a1a1a] border border-white/10 rounded-xl p-2 grid grid-cols-8 gap-1 shadow-2xl z-20 w-72">
+                      {EMOJIS.map(e => (
+                        <button key={e} type="button" onClick={() => { setBody(b => b + e); }} className="text-xl hover:bg-white/10 rounded p-1">{e}</button>
+                      ))}
+                    </div>
+                  )}
+                  <button type="button" onClick={() => setEmojiOpen(o => !o)} className="text-white/40 hover:text-brand-400 transition-colors shrink-0"><Smile className="w-5 h-5" /></button>
+                  <input value={body} onChange={e => setBody(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { setEmojiOpen(false); send(); } }} placeholder="Type a message…" className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-full text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500" />
+                  <button onClick={() => { setEmojiOpen(false); send(); }} className="bg-brand-500 text-black w-11 h-11 rounded-full flex items-center justify-center hover:bg-brand-400 transition-colors shrink-0"><Send className="w-4 h-4" /></button>
                 </div>
               </>
             )}
