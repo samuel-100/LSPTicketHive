@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Megaphone, TrendingUp, Calendar, MapPin, Copy, Check } from "lucide-react";
+import { Megaphone, TrendingUp, Calendar, MapPin, Share2 } from "lucide-react";
+import PromoteModal from "../components/PromoteModal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -17,7 +18,7 @@ export default function PromotePage() {
   const [events, setEvents] = useState<MEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [me, setMe] = useState<any>(null);
-  const [copied, setCopied] = useState<string | null>(null);
+  const [promoteEvent, setPromoteEvent] = useState<MEvent | null>(null);
 
   useEffect(() => {
     const u = localStorage.getItem("user");
@@ -31,13 +32,9 @@ export default function PromotePage() {
       .catch(() => setLoading(false));
   }, []);
 
-  function grabLink(id: string) {
+  function openPromote(e: MEvent) {
     if (!me) { window.location.href = "/login"; return; }
-    const link = `${window.location.origin}/events/${id}?ref=${me.id}`;
-    navigator.clipboard.writeText(link).then(() => {
-      setCopied(id);
-      setTimeout(() => setCopied(null), 2000);
-    });
+    setPromoteEvent(e);
   }
 
   return (
@@ -89,8 +86,8 @@ export default function PromotePage() {
                     <div className="text-xs text-white/40">Earn up to</div>
                     <div className="text-brand-400 font-bold">€{e.exampleEarn.toFixed(2)} <span className="text-white/30 font-normal text-xs">per ticket</span></div>
                   </div>
-                  <button onClick={() => grabLink(e.id)} className="w-full flex items-center justify-center gap-2 bg-brand-500 text-black py-2.5 rounded-xl text-sm font-semibold hover:bg-brand-400 transition-colors">
-                    {copied === e.id ? <><Check className="w-4 h-4" /> Link copied!</> : <><Copy className="w-4 h-4" /> Grab my link</>}
+                  <button onClick={() => openPromote(e)} className="w-full flex items-center justify-center gap-2 bg-brand-500 text-black py-2.5 rounded-xl text-sm font-semibold hover:bg-brand-400 transition-colors">
+                    <Share2 className="w-4 h-4" /> Promote this
                   </button>
                 </div>
               </motion.div>
@@ -98,6 +95,14 @@ export default function PromotePage() {
           </div>
         )}
       </div>
+
+      <PromoteModal
+        open={!!promoteEvent}
+        onClose={() => setPromoteEvent(null)}
+        eventTitle={promoteEvent?.title || ""}
+        link={promoteEvent && me ? `${window.location.origin}/events/${promoteEvent.id}?ref=${me.id}` : ""}
+        commissionRate={promoteEvent?.commissionRate}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Calendar, MapPin, Clock, Users, Minus, Plus, Ticket, ArrowLeft, CalendarPlus, Share2, Heart, Star, ThumbsUp, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
+import PromoteModal from "../../components/PromoteModal";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -288,20 +289,15 @@ function EventDetailInner() {
     if (u) { try { setIsOrganizer(JSON.parse(u).role === "ORGANIZER"); } catch {} }
   }, []);
 
-  const [promoteLabel, setPromoteLabel] = useState("Promote & Earn");
-  async function promoteEvent() {
+  const [promoteOpen, setPromoteOpen] = useState(false);
+  const [promoteLink, setPromoteLink] = useState("");
+  function promoteEvent() {
     const userStr = localStorage.getItem("user");
     if (!userStr) { window.location.href = "/login"; return; }
     const me = JSON.parse(userStr);
     if (me.role === "ORGANIZER") { alert("Business accounts can't promote events. Promoting is for attendee accounts."); return; }
-    const link = `${window.location.origin}/events/${params.id}?ref=${me.id}`;
-    try {
-      await navigator.clipboard.writeText(link);
-      setPromoteLabel("Link copied! Share to earn");
-      setTimeout(() => setPromoteLabel("Promote & Earn"), 2500);
-    } catch {
-      prompt("Share this link to earn commission:", link);
-    }
+    setPromoteLink(`${window.location.origin}/events/${params.id}?ref=${me.id}`);
+    setPromoteOpen(true);
   }
 
   const [shareLabel, setShareLabel] = useState("Share");
@@ -493,7 +489,7 @@ function EventDetailInner() {
                 onClick={promoteEvent}
                 className="flex items-center gap-2 bg-brand-500/15 border border-brand-500/30 text-brand-400 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-500/25 transition-colors"
               >
-                💸 {promoteLabel} ({event.commissionRate || 0}%)
+                💸 Promote & Earn ({event.commissionRate || 0}%)
               </button>
             )}
           </div>
@@ -826,6 +822,9 @@ function EventDetailInner() {
           </div>
         </div>
       </div>
+
+      {/* Promote modal */}
+      <PromoteModal open={promoteOpen} onClose={() => setPromoteOpen(false)} eventTitle={event.title} link={promoteLink} commissionRate={event.commissionRate} />
 
       {/* Email blast modal */}
       {blastOpen && (
