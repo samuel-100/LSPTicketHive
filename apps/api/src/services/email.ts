@@ -13,6 +13,9 @@ const FROM_EMAIL =
   process.env.FROM_EMAIL ||
   (RESEND_API_KEY ? "LSPTicketHive <onboarding@resend.dev>" : "mansaraysamuellamin001@gmail.com");
 
+// Where replies go (a real, monitored inbox helps deliverability + trust).
+const REPLY_TO = process.env.REPLY_TO || "support@lsptickethive.com";
+
 /**
  * Send one email via Resend (preferred) or SES (fallback).
  * Returns true on success. Never throws — callers shouldn't fail signup on a
@@ -29,7 +32,20 @@ export async function sendEmail(to: string, subject: string, html: string, text:
           Authorization: `Bearer ${RESEND_API_KEY}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ from: source, to: [to], subject, html, text }),
+        body: JSON.stringify({
+          from: source,
+          to: [to],
+          reply_to: REPLY_TO,
+          subject,
+          html,
+          text,
+          // One-click unsubscribe header — major spam-score improvement and
+          // required by Gmail/Yahoo bulk-sender rules.
+          headers: {
+            "List-Unsubscribe": `<mailto:${REPLY_TO}?subject=unsubscribe>, <${FRONTEND_URL}/unsubscribe>`,
+            "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+          },
+        }),
       });
       if (!res.ok) {
         console.error("Resend send failed:", res.status, await res.text());
