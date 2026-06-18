@@ -113,9 +113,10 @@ export default function Navbar() {
   return (
     <header className="fixed top-0 w-full bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/5 z-50">
       <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
-        {/* Back / Forward + Logo */}
+        {/* Back / Forward (desktop web only) + Logo */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
+          {/* Browser-style nav arrows: desktop only — mobile uses the bottom tab bar */}
+          <div className="hidden md:flex items-center gap-1">
             <button
               onClick={() => router.back()}
               aria-label="Go back"
@@ -126,7 +127,7 @@ export default function Navbar() {
             <button
               onClick={() => router.forward()}
               aria-label="Go forward"
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 active:scale-90 transition-all hidden sm:flex"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 active:scale-90 transition-all"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -135,7 +136,7 @@ export default function Navbar() {
             <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
               <Ticket className="w-5 h-5 text-black" />
             </div>
-            <span className="text-lg font-bold text-white hidden sm:block">LSPTicketHive</span>
+            <span className="text-lg font-bold text-white">LSPTicketHive</span>
           </Link>
         </div>
 
