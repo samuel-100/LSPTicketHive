@@ -7,3 +7,41 @@ body {
   background-color: #0a0a0a;
   color: #ffffff;
 }
+
+/* ---- Light mode: remap the dark utility classes the app uses ---- */
+/* The whole app is built dark; in light mode we override the recurring
+   dark backgrounds/borders/text so it flips from a single toggle. */
+html.light body { background-color: #f7f7f8; color: #111111; }
+
+html.light .bg-\[\#0a0a0a\],
+html.light .bg-\[\#0a0a0a\]\/80,
+html.light .bg-\[\#0a0a0a\]\/90,
+html.light .bg-\[\#141414\],
+html.light .bg-\[\#1a1a1a\],
+html.light .bg-black { background-color: #ffffff !important; }
+
+html.light .bg-white\/\[0\.02\],
+html.light .bg-white\/\[0\.03\],
+html.light .bg-white\/5,
+html.light .bg-white\/10 { background-color: #f0f0f2 !important; }
+
+html.light .border-white\/5,
+html.light .border-white\/10,
+html.light .border-white\/\[0\.06\] { border-color: #e3e3e7 !important; }
+
+/* Text shades → dark equivalents */
+html.light .text-white { color: #111111 !important; }
+html.light .text-white\/80 { color: rgba(17,17,17,0.8) !important; }
+html.light .text-white\/70 { color: rgba(17,17,17,0.7) !important; }
+html.light .text-white\/60 { color: rgba(17,17,17,0.62) !important; }
+html.light .text-white\/50 { color: rgba(17,17,17,0.55) !important; }
+html.light .text-white\/40 { color: rgba(17,17,17,0.5) !important; }
+html.light .text-white\/30 { color: rgba(17,17,17,0.42) !important; }
+html.light .text-white\/20 { color: rgba(17,17,17,0.32) !important; }
+html.light .placeholder\:text-white\/20::placeholder { color: rgba(17,17,17,0.35) !important; }
+
+/* Header/nav blur backgrounds */
+html.light header { background-color: rgba(255,255,255,0.9) !important; }
+
+/* Keep brand green readable on light */
+html.light .text-brand-400 { color: #16a34a !important; }

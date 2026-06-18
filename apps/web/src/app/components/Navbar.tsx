@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Ticket, Search, Menu, X, MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -258,6 +259,7 @@ export default function Navbar() {
               <button onClick={handleLogout} className="text-xs text-white/30 hover:text-white transition-colors px-2">
                 Log out
               </button>
+              <ThemeToggle />
             </>
           ) : (
             <>
@@ -267,6 +269,7 @@ export default function Navbar() {
               <Link href="/register" className="bg-brand-500 text-black px-5 py-2 rounded-full text-sm font-semibold hover:bg-brand-400 transition-colors">
                 Sign up
               </Link>
+              <ThemeToggle />
             </>
           )}
         </div>
