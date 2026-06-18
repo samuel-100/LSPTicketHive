@@ -28,7 +28,28 @@ function MessagesInner() {
   const [groupOpen, setGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [groupPicks, setGroupPicks] = useState<string[]>([]);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [members, setMembers] = useState<any[]>([]);
+  const [meIsAdmin, setMeIsAdmin] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  async function openMembers() {
+    if (!active) return;
+    const d = await fetch(`${API_URL}/api/messages/${active}/members`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+    if (d.success) { setMembers(d.data.members); setMeIsAdmin(d.data.meIsAdmin); setMembersOpen(true); }
+  }
+  async function addMember(userId: string) {
+    await fetch(`${API_URL}/api/messages/${active}/members`, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ userId }) });
+    openMembers();
+  }
+  async function removeMember(userId: string) {
+    await fetch(`${API_URL}/api/messages/${active}/members/${userId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+    openMembers();
+  }
+  async function toggleAdmin(userId: string, makeAdmin: boolean) {
+    await fetch(`${API_URL}/api/messages/${active}/members/${userId}`, { method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ isAdmin: makeAdmin }) });
+    openMembers();
+  }
 
   // Candidate members = distinct people from my existing 1-1 conversations.
   const contacts = convos.filter(c => !c.isGroup && c.other?.id).map(c => c.other);
@@ -180,13 +201,15 @@ function MessagesInner() {
               <>
                 <div className="flex items-center gap-3 p-4 border-b border-white/5">
                   <button onClick={() => setActive(null)} className="md:hidden text-white/40"><ArrowLeft className="w-5 h-5" /></button>
-                  <div className="w-9 h-9 rounded-full bg-brand-500/10 flex items-center justify-center">
-                    {thread.other?.avatarUrl ? <img src={thread.other.avatarUrl} className="w-full h-full rounded-full object-cover" alt="" /> : <span className="text-brand-400 font-bold text-sm">{thread.other?.firstName?.[0]}</span>}
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-white">{thread.other?.firstName} {thread.other?.lastName}</div>
-                    <div className="text-[10px] text-white/30 uppercase">{thread.other?.role === "ORGANIZER" ? "Business" : (thread.other?.role || "")}</div>
-                  </div>
+                  <button onClick={() => thread.isGroup && openMembers()} className={`flex items-center gap-3 flex-1 text-left ${thread.isGroup ? "hover:opacity-80" : "cursor-default"}`}>
+                    <div className="w-9 h-9 rounded-full bg-brand-500/10 flex items-center justify-center">
+                      {thread.isGroup ? <Users className="w-4 h-4 text-brand-400" /> : (thread.other?.avatarUrl ? <img src={thread.other.avatarUrl} className="w-full h-full rounded-full object-cover" alt="" /> : <span className="text-brand-400 font-bold text-sm">{thread.other?.firstName?.[0]}</span>)}
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-white">{thread.other?.firstName} {thread.other?.lastName}</div>
+                      <div className="text-[10px] text-white/30 uppercase">{thread.isGroup ? `${thread.other?.memberCount || 0} members · tap to manage` : (thread.other?.role === "ORGANIZER" ? "Business" : (thread.other?.role || ""))}</div>
+                    </div>
+                  </button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-1.5" style={{ backgroundImage: "radial-gradient(circle at 25% 15%, rgba(34,197,94,0.04), transparent 40%)" }}>
                   {thread.messages.map((m: any) => {
@@ -235,6 +258,53 @@ function MessagesInner() {
           </div>
         </div>
       </div>
+
+      {/* Group members / admin modal */}
+      {membersOpen && (
+        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4" onClick={() => setMembersOpen(false)}>
+          <div className="bg-[#141414] border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2"><Users className="w-5 h-5 text-brand-400" /> Group members</h2>
+              <button onClick={() => setMembersOpen(false)} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="max-h-72 overflow-y-auto space-y-1 mb-4">
+              {members.map((m: any) => (
+                <div key={m.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5">
+                  <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center shrink-0">
+                    {m.avatarUrl ? <img src={m.avatarUrl} className="w-full h-full rounded-full object-cover" alt="" /> : <span className="text-brand-400 text-xs font-bold">{m.firstName?.[0]}</span>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm text-white">{m.firstName} {m.lastName} {m.isMe && <span className="text-white/30">(you)</span>}</span>
+                    {m.isAdmin && <span className="ml-2 text-[10px] bg-brand-500/20 text-brand-400 px-1.5 py-0.5 rounded-full">Admin</span>}
+                  </div>
+                  {meIsAdmin && !m.isMe && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button onClick={() => toggleAdmin(m.id, !m.isAdmin)} className="text-[11px] text-white/50 hover:text-brand-400 px-2 py-1">{m.isAdmin ? "Demote" : "Make admin"}</button>
+                      <button onClick={() => removeMember(m.id)} className="text-[11px] text-red-400/70 hover:text-red-400 px-2 py-1">Remove</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {meIsAdmin && (
+              <div>
+                <p className="text-xs text-white/40 mb-2">Add from your contacts</p>
+                <div className="max-h-40 overflow-y-auto space-y-1">
+                  {contacts.filter((u: any) => !members.some((m: any) => m.id === u.id)).map((u: any) => (
+                    <button key={u.id} onClick={() => addMember(u.id)} className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 text-left">
+                      <div className="w-7 h-7 rounded-full bg-brand-500/10 flex items-center justify-center shrink-0">
+                        {u.avatarUrl ? <img src={u.avatarUrl} className="w-full h-full rounded-full object-cover" alt="" /> : <span className="text-brand-400 text-[11px] font-bold">{u.firstName?.[0]}</span>}
+                      </div>
+                      <span className="text-sm text-white/80 flex-1">{u.firstName} {u.lastName}</span>
+                      <span className="text-brand-400 text-sm">+ Add</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* New group modal */}
       {groupOpen && (

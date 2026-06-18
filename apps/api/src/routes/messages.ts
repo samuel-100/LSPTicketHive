@@ -32,14 +32,73 @@ messagesRouter.post("/groups", authenticate, async (req: AuthRequest, res) => {
   const ids: string[] = Array.from(new Set([req.user!.userId, ...(Array.isArray(memberIds) ? memberIds : [])]));
   if (ids.length < 2) return res.status(400).json({ success: false, error: "Add at least one other member" });
 
+  const creator = req.user!.userId;
   const convo = await prisma.conversation.create({
     data: {
       isGroup: true,
       name: name.trim(),
-      members: { create: ids.map(id => ({ userId: id })) },
+      // Creator is the first admin.
+      members: { create: ids.map(id => ({ userId: id, isAdmin: id === creator })) },
     },
   });
   res.json({ success: true, data: { conversationId: convo.id } });
+});
+
+// Group members list (with admin flags).
+messagesRouter.get("/:id/members", authenticate, async (req: AuthRequest, res) => {
+  const me = req.user!.userId;
+  const convo = await prisma.conversation.findUnique({ where: { id: req.params.id }, include: { members: true } });
+  if (!convo?.isGroup || !convo.members.some((m: any) => m.userId === me)) {
+    return res.status(403).json({ success: false, error: "Not a member" });
+  }
+  const users = await prisma.user.findMany({ where: { id: { in: convo.members.map((m: any) => m.userId) } }, select: { id: true, firstName: true, lastName: true, avatarUrl: true } });
+  const uMap = new Map(users.map((u: any) => [u.id, u]));
+  const meIsAdmin = convo.members.find((m: any) => m.userId === me)?.isAdmin || false;
+  res.json({
+    success: true,
+    data: {
+      meIsAdmin,
+      members: convo.members.map((m: any) => ({ ...uMap.get(m.userId), isAdmin: m.isAdmin, isMe: m.userId === me })),
+    },
+  });
+});
+
+// Helper: assert caller is an admin of the group.
+async function assertAdmin(convoId: string, me: string) {
+  const m = await prisma.conversationMember.findUnique({ where: { conversationId_userId: { conversationId: convoId, userId: me } } });
+  return !!m?.isAdmin;
+}
+
+// Add a member (admin only).
+messagesRouter.post("/:id/members", authenticate, async (req: AuthRequest, res) => {
+  const me = req.user!.userId;
+  if (!(await assertAdmin(req.params.id, me))) return res.status(403).json({ success: false, error: "Admins only" });
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ success: false, error: "userId required" });
+  await prisma.conversationMember.upsert({
+    where: { conversationId_userId: { conversationId: req.params.id, userId } },
+    create: { conversationId: req.params.id, userId },
+    update: {},
+  });
+  res.json({ success: true });
+});
+
+// Remove a member (admin only; can't remove self here).
+messagesRouter.delete("/:id/members/:userId", authenticate, async (req: AuthRequest, res) => {
+  const me = req.user!.userId;
+  if (!(await assertAdmin(req.params.id, me))) return res.status(403).json({ success: false, error: "Admins only" });
+  if (req.params.userId === me) return res.status(400).json({ success: false, error: "Use Leave group instead" });
+  await prisma.conversationMember.deleteMany({ where: { conversationId: req.params.id, userId: req.params.userId } });
+  res.json({ success: true });
+});
+
+// Promote/demote a member to admin (admin only).
+messagesRouter.patch("/:id/members/:userId", authenticate, async (req: AuthRequest, res) => {
+  const me = req.user!.userId;
+  if (!(await assertAdmin(req.params.id, me))) return res.status(403).json({ success: false, error: "Admins only" });
+  const makeAdmin = !!req.body?.isAdmin;
+  await prisma.conversationMember.updateMany({ where: { conversationId: req.params.id, userId: req.params.userId }, data: { isAdmin: makeAdmin } });
+  res.json({ success: true });
 });
 
 // Start (or open) a conversation with another user.
