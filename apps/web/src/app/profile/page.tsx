@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Camera, Mail, MapPin, Save, Ticket, Heart, Users, BadgeCheck, Rocket, Phone } from "lucide-react";
+import { Camera, Mail, MapPin, Save, Ticket, Heart, Users, BadgeCheck, Rocket } from "lucide-react";
+import PhoneInput from "../components/PhoneInput";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -205,10 +206,7 @@ export default function ProfilePage() {
             </Field>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Phone">
-                <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus-within:border-brand-500 transition-colors">
-                  <Phone className="w-4 h-4 text-brand-400 shrink-0" />
-                  <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Optional" className="bg-transparent text-white placeholder:text-white/20 focus:outline-none w-full text-sm" />
-                </div>
+                <PhoneInput value={phone} onChange={setPhone} />
               </Field>
               <Field label="City">
                 <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus-within:border-brand-500 transition-colors">
