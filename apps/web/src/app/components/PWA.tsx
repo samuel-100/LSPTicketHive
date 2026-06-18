@@ -8,9 +8,27 @@ export default function PWA() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    // Register the service worker.
+    // Register the service worker and keep it fresh on every load.
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      navigator.serviceWorker.register("/sw.js").then((reg) => {
+        reg.update();
+        // When a new SW is installed, activate it and reload once for fresh content.
+        reg.addEventListener("updatefound", () => {
+          const sw = reg.installing;
+          if (!sw) return;
+          sw.addEventListener("statechange", () => {
+            if (sw.state === "installed" && navigator.serviceWorker.controller) {
+              sw.postMessage?.("skip-waiting");
+            }
+          });
+        });
+      }).catch(() => {});
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (reloaded) return;
+        reloaded = true;
+        window.location.reload();
+      });
     }
     // Capture the install prompt (Android/desktop Chrome).
     function onPrompt(e: any) {

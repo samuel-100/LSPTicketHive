@@ -1,51 +1,39 @@
-// Minimal service worker: enables PWA install + offline shell caching.
-const CACHE = "lsptickethive-v1";
-const APP_SHELL = ["/", "/events", "/offline"];
+// Service worker: provides install + offline fallback ONLY.
+// Pages and assets are always fetched fresh (network-first / pass-through) so
+// new deploys show immediately — no stale-cache "won't refresh" problem.
+const CACHE = "lsptickethive-v3";
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(APP_SHELL).catch(() => {})));
+  // Pre-cache just the offline page; activate immediately.
+  e.waitUntil(caches.open(CACHE).then((c) => c.add("/offline").catch(() => {})));
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (e) => {
+  // Drop all old caches so previous builds can't be served.
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (e) => {
   const req = e.request;
-  // Only handle GET navigations/assets; never cache API calls.
   if (req.method !== "GET" || req.url.includes("/api/")) return;
 
+  // Navigations: always go to the network; only fall back to offline page if truly offline.
   if (req.mode === "navigate") {
-    // Network-first for pages, fall back to cache/offline.
-    e.respondWith(
-      fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy));
-          return res;
-        })
-        .catch(() => caches.match(req).then((r) => r || caches.match("/offline")))
-    );
+    e.respondWith(fetch(req).catch(() => caches.match("/offline")));
     return;
   }
-
-  // Cache-first for static assets.
-  e.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req).then((res) => {
-      if (res.ok && (req.url.includes("/_next/static") || req.destination === "image")) {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy));
-      }
-      return res;
-    }).catch(() => cached))
-  );
+  // Everything else: just pass through to network (no asset caching → never stale).
 });
 
-// Show push notifications (for future web-push).
+// Allow the page to tell a waiting SW to take over.
+self.addEventListener("message", (e) => {
+  if (e.data === "skip-waiting") self.skipWaiting();
+});
+
+// Web push (future).
 self.addEventListener("push", (e) => {
   if (!e.data) return;
   try {
@@ -53,7 +41,6 @@ self.addEventListener("push", (e) => {
     e.waitUntil(self.registration.showNotification(d.title || "LSPTicketHive", { body: d.body, icon: "/icon.svg", data: d.url }));
   } catch {}
 });
-
 self.addEventListener("notificationclick", (e) => {
   e.notification.close();
   e.waitUntil(self.clients.openWindow(e.notification.data || "/"));
