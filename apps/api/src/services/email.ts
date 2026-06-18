@@ -90,6 +90,52 @@ export async function sendPasswordResetCode(toEmail: string, code: string, name:
   return sendEmail(toEmail, subject, html, text);
 }
 
+export async function sendTicketConfirmation(
+  toEmail: string,
+  attendeeName: string,
+  eventTitle: string,
+  eventDate: string,
+  venue: string,
+  orderId: string,
+  tickets: { qrCode: string; ticketType: string }[]
+): Promise<boolean> {
+  const subject = `Your tickets for ${eventTitle}`;
+
+  const ticketBlocks = tickets
+    .map(
+      (t, i) => `
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:16px;text-align:center;">
+        <p style="color:#111;font-weight:600;margin:0 0 4px 0;">Ticket ${i + 1} — ${t.ticketType}</p>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(t.qrCode)}" width="200" height="200" alt="QR code" style="display:block;margin:12px auto;" />
+        <p style="color:#666;font-size:12px;font-family:monospace;margin:0;word-break:break-all;">ID: ${t.qrCode}</p>
+      </div>`
+    )
+    .join("");
+
+  const html = `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:480px;margin:0 auto;padding:32px 20px;background:#0a0a0a;border-radius:16px;">
+      <div style="text-align:center;margin-bottom:24px;">
+        <span style="background:#22c55e;color:#000;padding:8px 16px;border-radius:8px;font-weight:bold;font-size:14px;">LSPTicketHive</span>
+      </div>
+      <h1 style="color:#fff;font-size:22px;text-align:center;margin-bottom:4px;">You're in! 🎉</h1>
+      <p style="color:#9ca3af;font-size:14px;text-align:center;margin-bottom:20px;">Hi ${attendeeName}, here ${tickets.length > 1 ? "are your tickets" : "is your ticket"} for <b style="color:#fff;">${eventTitle}</b>.</p>
+      <div style="background:#1a1a2e;border:1px solid #2d2d3d;border-radius:12px;padding:16px;margin-bottom:20px;">
+        <p style="color:#9ca3af;font-size:13px;margin:4px 0;">📅 ${eventDate}</p>
+        ${venue ? `<p style="color:#9ca3af;font-size:13px;margin:4px 0;">📍 ${venue}</p>` : ""}
+        <p style="color:#9ca3af;font-size:13px;margin:4px 0;">Order: ${orderId}</p>
+      </div>
+      ${ticketBlocks}
+      <p style="color:#6b7280;font-size:12px;text-align:center;margin-top:20px;">Show the QR code at the door for entry. Keep this email safe — your ticket ID is your proof of purchase.</p>
+      <p style="color:#4b5563;font-size:11px;text-align:center;margin-top:8px;">View your tickets anytime at ${FRONTEND_URL}/tickets</p>
+    </div>`;
+
+  const text = `You're in! Tickets for ${eventTitle}\n${eventDate}${venue ? ` at ${venue}` : ""}\nOrder: ${orderId}\n\n${tickets
+    .map((t, i) => `Ticket ${i + 1} (${t.ticketType}) — ID: ${t.qrCode}`)
+    .join("\n")}\n\nView your tickets: ${FRONTEND_URL}/tickets`;
+
+  return sendEmail(toEmail, subject, html, text);
+}
+
 export async function sendNewEventNotification(
   toEmail: string,
   attendeeName: string,

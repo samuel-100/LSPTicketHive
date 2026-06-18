@@ -3,6 +3,7 @@ import { prisma } from "@lsp-tickethive/database";
 import { authenticate, AuthRequest } from "../middleware/auth";
 import Stripe from "stripe";
 import { z } from "zod";
+import { sendTicketConfirmation } from "../services/email";
 
 export const ordersRouter = Router();
 
@@ -74,20 +75,30 @@ ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
         },
       });
 
+      const createdTickets: { qrCode: string; ticketType: string }[] = [];
       for (const item of orderItems) {
+        const tt = event.ticketTypes.find((t: any) => t.id === item.ticketTypeId);
         await prisma.ticketType.update({
           where: { id: item.ticketTypeId },
           data: { sold: { increment: item.quantity } },
         });
         for (let i = 0; i < item.quantity; i++) {
-          await prisma.ticket.create({
+          const ticket = await prisma.ticket.create({
             data: {
               orderId: order.id,
               ticketTypeId: item.ticketTypeId,
               userId: req.user!.userId,
             },
           });
+          createdTickets.push({ qrCode: ticket.qrCode, ticketType: tt?.name || "Ticket" });
         }
+      }
+
+      // Email the tickets (QR + IDs) to the buyer.
+      const buyer = await prisma.user.findUnique({ where: { id: req.user!.userId } });
+      if (buyer) {
+        const dateStr = new Date(event.startDate).toLocaleDateString("en-IE", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+        sendTicketConfirmation(buyer.email, buyer.firstName, event.title, dateStr, event.venue || "", order.id, createdTickets).catch(console.error);
       }
 
       return res.json({ success: true, data: { orderId: order.id, free: true, redirectUrl: `${FRONTEND_URL}/events` } });

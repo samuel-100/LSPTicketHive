@@ -58,6 +58,49 @@ checkInRouter.post("/scan", authenticate, requireRole("ORGANIZER", "ADMIN"), asy
   });
 });
 
+// Owner: search attendees across all your events by name or email.
+// Used at the door when someone lost access to their phone/email.
+checkInRouter.get("/lookup", authenticate, requireRole("ORGANIZER", "ADMIN"), async (req: AuthRequest, res) => {
+  const q = (req.query.q as string || "").trim();
+  if (q.length < 2) return res.json({ success: true, data: [] });
+
+  const org = await prisma.organization.findUnique({ where: { ownerId: req.user!.userId } });
+  if (!org) return res.status(403).json({ success: false, error: "Not authorized" });
+
+  // Only tickets for events owned by this organization, matching the search.
+  const tickets = await prisma.ticket.findMany({
+    where: {
+      ticketType: { event: { organizationId: org.id } },
+      OR: [
+        { user: { firstName: { contains: q, mode: "insensitive" } } },
+        { user: { lastName: { contains: q, mode: "insensitive" } } },
+        { user: { email: { contains: q, mode: "insensitive" } } },
+        { qrCode: { contains: q, mode: "insensitive" } },
+      ],
+    },
+    include: {
+      user: { select: { firstName: true, lastName: true, email: true, avatarUrl: true } },
+      ticketType: { select: { name: true, event: { select: { title: true, startDate: true } } } },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
+  res.json({
+    success: true,
+    data: tickets.map((t: any) => ({
+      ticketId: t.id,
+      qrCode: t.qrCode,
+      status: t.status,
+      checkedInAt: t.checkedInAt,
+      attendee: t.user,
+      ticketType: t.ticketType.name,
+      eventTitle: t.ticketType.event.title,
+      eventDate: t.ticketType.event.startDate,
+    })),
+  });
+});
+
 // Get check-in stats for an event
 checkInRouter.get("/stats/:eventId", authenticate, requireRole("ORGANIZER", "ADMIN"), async (req: AuthRequest, res) => {
   const org = await prisma.organization.findUnique({ where: { ownerId: req.user!.userId } });

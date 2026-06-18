@@ -30,15 +30,17 @@ export default function Navbar() {
     setSearchingCity(true);
     const t = setTimeout(async () => {
       try {
-        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&layer=city&layer=district&layer=locality`);
+        // No layer filter → matches cities, towns, villages, districts, regions worldwide.
+        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=8`);
         const data = await res.json();
         if (cancelled) return;
         const seen = new Set<string>();
         const opts = (data.features || [])
           .map((f: any) => {
             const p = f.properties || {};
-            const name = p.name || p.city || "";
-            const parts = [name, p.state, p.country].filter(Boolean);
+            // Prefer a place-like name; fall back to whatever name OSM gives.
+            const name = p.name || p.city || p.county || p.state || "";
+            const parts = [name, p.state && p.state !== name ? p.state : null, p.country].filter(Boolean);
             return { name, label: parts.join(", ") };
           })
           .filter((o: any) => o.name && !seen.has(o.label) && seen.add(o.label));

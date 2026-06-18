@@ -2,6 +2,7 @@ import { Router, raw } from "express";
 import { prisma } from "@lsp-tickethive/database";
 import Stripe from "stripe";
 import crypto from "crypto";
+import { sendTicketConfirmation } from "../services/email";
 
 export const webhooksRouter = Router();
 
@@ -60,6 +61,32 @@ webhooksRouter.post("/stripe", raw({ type: "application/json" }), async (req, re
           await tx.ticket.createMany({ data: tickets });
         }
       });
+
+      // Email the buyer their tickets (QR codes + IDs).
+      try {
+        const fullOrder = await prisma.order.findUnique({
+          where: { id: order.id },
+          include: {
+            user: true,
+            event: true,
+            tickets: { include: { ticketType: { select: { name: true } } } },
+          },
+        });
+        if (fullOrder?.user && fullOrder.event) {
+          const dateStr = new Date(fullOrder.event.startDate).toLocaleDateString("en-IE", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+          await sendTicketConfirmation(
+            fullOrder.user.email,
+            fullOrder.user.firstName,
+            fullOrder.event.title,
+            dateStr,
+            fullOrder.event.venue || "",
+            fullOrder.id,
+            fullOrder.tickets.map((t: any) => ({ qrCode: t.qrCode, ticketType: t.ticketType.name }))
+          );
+        }
+      } catch (e) {
+        console.error("Ticket email failed:", e);
+      }
 
       console.log(`Order ${order.id} completed — tickets issued`);
       break;

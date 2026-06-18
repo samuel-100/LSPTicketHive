@@ -33,7 +33,7 @@ async function geocodeCity(name: string): Promise<[number, number] | null> {
   const key = name.trim().toLowerCase();
   if (CITY_COORDS[key]) return CITY_COORDS[key];
   try {
-    const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(name)}&limit=1&layer=city`);
+    const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(name)}&limit=1`);
     const data = await res.json();
     const f = data.features?.[0];
     if (f?.geometry?.coordinates) {
