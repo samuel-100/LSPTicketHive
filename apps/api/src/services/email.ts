@@ -75,6 +75,21 @@ export async function sendVerificationCode(toEmail: string, code: string, name: 
   return sendEmail(toEmail, subject, html, text);
 }
 
+export async function sendPasswordResetCode(toEmail: string, code: string, name: string): Promise<boolean> {
+  const subject = `${code} is your LSPTicketHive password reset code`;
+  const html = `
+    <div style="font-family:-apple-system,sans-serif;max-width:400px;margin:0 auto;padding:40px 20px;text-align:center;">
+      <h2 style="color:#22c55e;margin-bottom:8px;">LSPTicketHive</h2>
+      <p style="color:#666;margin-bottom:24px;">Hi ${name}, use this code to reset your password.</p>
+      <div style="background:#f5f5f5;border-radius:12px;padding:24px;margin-bottom:24px;">
+        <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#111;">${code}</span>
+      </div>
+      <p style="color:#999;font-size:13px;">This code expires in 15 minutes. If you didn't request this, you can ignore this email.</p>
+    </div>`;
+  const text = `Your LSPTicketHive password reset code is: ${code}. Expires in 15 minutes. If you didn't request this, ignore this email.`;
+  return sendEmail(toEmail, subject, html, text);
+}
+
 export async function sendNewEventNotification(
   toEmail: string,
   attendeeName: string,

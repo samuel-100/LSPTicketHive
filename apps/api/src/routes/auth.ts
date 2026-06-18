@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@lsp-tickethive/database";
 import { signToken, authenticate, AuthRequest } from "../middleware/auth";
 import { z } from "zod";
-import { sendVerificationCode } from "../services/email";
+import { sendVerificationCode, sendPasswordResetCode } from "../services/email";
 
 function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -177,6 +177,70 @@ authRouter.post("/resend-code", async (req, res) => {
 
   sendOTPEmail(email, code, user.firstName);
   res.json({ success: true, message: "Code sent" });
+});
+
+// Step 1 of password reset: request a code.
+// Always returns success so we don't reveal which emails are registered.
+authRouter.post("/forgot-password", async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ success: false, error: "Email required" });
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (user) {
+    const code = generateOTP();
+    await prisma.verificationCode.create({
+      data: { email, code, expiresAt: new Date(Date.now() + 15 * 60 * 1000) },
+    });
+    sendPasswordResetCode(email, code, user.firstName);
+  }
+
+  res.json({ success: true, message: "If that email is registered, a reset code has been sent." });
+});
+
+// Step 2 of password reset: verify the code and set a new password.
+const resetPasswordSchema = z.object({
+  email: z.string().email(),
+  code: z.string().min(4),
+  password: z.string().min(8),
+});
+
+authRouter.post("/reset-password", async (req, res) => {
+  try {
+    const input = resetPasswordSchema.parse(req.body);
+
+    const verification = await prisma.verificationCode.findFirst({
+      where: { email: input.email, code: input.code, used: false, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!verification) {
+      return res.status(400).json({ success: false, error: "Invalid or expired code" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email: input.email } });
+    if (!user) return res.status(404).json({ success: false, error: "User not found" });
+
+    const passwordHash = await bcrypt.hash(input.password, 12);
+    await prisma.$transaction([
+      prisma.verificationCode.update({ where: { id: verification.id }, data: { used: true } }),
+      // A successful reset also confirms the user controls the inbox.
+      prisma.user.update({ where: { email: input.email }, data: { passwordHash, emailVerified: true } }),
+    ]);
+
+    const token = signToken({ userId: user.id, email: user.email, role: user.role });
+    res.cookie("token", token, COOKIE_OPTIONS);
+    res.json({
+      success: true,
+      data: {
+        token,
+        user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role },
+      },
+    });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ success: false, error: err.errors[0].message });
+    }
+    res.status(500).json({ success: false, error: "Internal server error" });
+  }
 });
 
 authRouter.post("/logout", (_req, res) => {
