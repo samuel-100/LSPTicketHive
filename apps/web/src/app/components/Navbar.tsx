@@ -245,6 +245,7 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-1">
           {user ? (
             <>
+              <NavLink href="/" active={isActive("/")}>Home</NavLink>
               {user.role === "ORGANIZER" && <NavLink href="/dashboard/create" active={isActive("/dashboard/create")}>Create</NavLink>}
               {user.role !== "ORGANIZER" && <NavLink href="/promote" active={isActive("/promote")}>Promote & Earn</NavLink>}
               <NavLink href="/messages" active={isActive("/messages")}>Messages</NavLink>
@@ -279,6 +280,7 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden border-t border-white/5 bg-[#0a0a0a] px-6 py-4 space-y-3">
+          <MobileLink href="/" onClick={() => setMenuOpen(false)}>Home</MobileLink>
           <MobileLink href="/events" onClick={() => setMenuOpen(false)}>Find Events</MobileLink>
           {user && user.role === "ORGANIZER" && <MobileLink href="/dashboard/create" onClick={() => setMenuOpen(false)}>Create Events</MobileLink>}
           {user && <MobileLink href="/saved" onClick={() => setMenuOpen(false)}>Saved Events</MobileLink>}
