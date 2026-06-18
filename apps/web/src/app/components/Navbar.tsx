@@ -216,6 +216,7 @@ export default function Navbar() {
           {user ? (
             <>
               {user.role === "ORGANIZER" && <NavLink href="/dashboard/create" active={isActive("/dashboard/create")}>Create</NavLink>}
+              <NavLink href="/saved" active={isActive("/saved")}>Saved</NavLink>
               <NavLink href="/tickets" active={isActive("/tickets")}>Tickets</NavLink>
               {user.role === "ORGANIZER" && <NavLink href="/dashboard" active={isActive("/dashboard")}>Dashboard</NavLink>}
               <Link href="/profile" className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center text-brand-400 text-xs font-bold hover:bg-brand-500/20 transition-colors ml-2">
@@ -248,6 +249,7 @@ export default function Navbar() {
         <div className="md:hidden border-t border-white/5 bg-[#0a0a0a] px-6 py-4 space-y-3">
           <MobileLink href="/events" onClick={() => setMenuOpen(false)}>Find Events</MobileLink>
           {user && user.role === "ORGANIZER" && <MobileLink href="/dashboard/create" onClick={() => setMenuOpen(false)}>Create Events</MobileLink>}
+          {user && <MobileLink href="/saved" onClick={() => setMenuOpen(false)}>Saved Events</MobileLink>}
           {user && <MobileLink href="/tickets" onClick={() => setMenuOpen(false)}>My Tickets</MobileLink>}
           {user && user.role === "ORGANIZER" && <MobileLink href="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</MobileLink>}
           {user && user.role === "ORGANIZER" && <MobileLink href="/dashboard/scan" onClick={() => setMenuOpen(false)}>Scan Tickets</MobileLink>}

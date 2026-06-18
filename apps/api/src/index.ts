@@ -11,6 +11,7 @@ import { organizationsRouter } from "./routes/organizations";
 import { checkInRouter } from "./routes/checkin";
 import { uploadRouter } from "./routes/upload";
 import { followRouter } from "./routes/follow";
+import { engagementRouter } from "./routes/engagement";
 import { oauthRouter } from "./routes/oauth";
 import passport from "passport";
 
@@ -33,6 +34,7 @@ app.use("/api/organizations", organizationsRouter);
 app.use("/api/checkin", checkInRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/follow", followRouter);
+app.use("/api/engagement", engagementRouter);
 app.use(passport.initialize());
 app.use("/api/auth", oauthRouter);
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, MapPin, Clock, Users, Minus, Plus, Ticket, ArrowLeft, CalendarPlus, Share2 } from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Minus, Plus, Ticket, ArrowLeft, CalendarPlus, Share2, Heart, Star } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -139,6 +139,58 @@ export default function EventDetailPage() {
       location: loc,
     });
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
+  }
+
+  const [saved, setSaved] = useState(false);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewAvg, setReviewAvg] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [myRating, setMyRating] = useState(0);
+  const [myComment, setMyComment] = useState("");
+  const [reviewMsg, setReviewMsg] = useState("");
+
+  // Load saved-state + reviews once the event is known.
+  useEffect(() => {
+    if (!event) return;
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetch(`${API_URL}/api/engagement/saved/check/${event.id}`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.json()).then(d => { if (d.data) setSaved(d.data.saved); }).catch(() => {});
+    }
+    fetch(`${API_URL}/api/engagement/reviews/${event.id}`)
+      .then(r => r.json()).then(d => {
+        if (d.data) { setReviews(d.data.reviews); setReviewAvg(d.data.average); setReviewCount(d.data.count); }
+      }).catch(() => {});
+  }, [event]);
+
+  async function toggleSave() {
+    const token = localStorage.getItem("token");
+    if (!token) { window.location.href = "/login"; return; }
+    setSaved(!saved); // optimistic
+    await fetch(`${API_URL}/api/engagement/saved/${event!.id}`, {
+      method: "POST", headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => setSaved(saved));
+  }
+
+  async function submitReview() {
+    const token = localStorage.getItem("token");
+    if (!token) { window.location.href = "/login"; return; }
+    if (myRating < 1) { setReviewMsg("Please pick a star rating."); return; }
+    const res = await fetch(`${API_URL}/api/engagement/reviews/${event!.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ rating: myRating, comment: myComment }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setReviewMsg("Thanks for your review!");
+      setMyComment(""); setMyRating(0);
+      const r = await fetch(`${API_URL}/api/engagement/reviews/${event!.id}`).then(r => r.json());
+      if (r.data) { setReviews(r.data.reviews); setReviewAvg(r.data.average); setReviewCount(r.data.count); }
+    } else {
+      setReviewMsg(data.error || "Could not submit review");
+    }
+    setTimeout(() => setReviewMsg(""), 4000);
   }
 
   const [shareLabel, setShareLabel] = useState("Share");
@@ -297,6 +349,13 @@ export default function EventDetailPage() {
               <Share2 className="w-4 h-4 text-brand-400" />
               {shareLabel}
             </button>
+            <button
+              onClick={toggleSave}
+              className={`flex items-center gap-2 border px-4 py-2 rounded-lg text-sm font-medium transition-colors ${saved ? "bg-brand-500/10 border-brand-500/30 text-brand-400" : "bg-white/5 border-white/10 text-white hover:border-brand-500/40"}`}
+            >
+              <Heart className={`w-4 h-4 ${saved ? "fill-brand-400 text-brand-400" : "text-brand-400"}`} />
+              {saved ? "Saved" : "Save"}
+            </button>
           </div>
           </div>
         </div>
@@ -311,6 +370,69 @@ export default function EventDetailPage() {
                 <div className="mt-6 flex gap-2 flex-wrap">
                   {event.tags.map(tag => (
                     <span key={tag} className="bg-white/5 text-white/40 px-3 py-1 rounded-full text-sm">{tag}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Reviews */}
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 md:p-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-white">Reviews</h2>
+                {reviewCount > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <Star className="w-4 h-4 fill-brand-400 text-brand-400" />
+                    <span className="text-white font-medium">{reviewAvg}</span>
+                    <span className="text-white/30 text-sm">({reviewCount})</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Leave a review */}
+              <div className="border border-white/5 rounded-xl p-4 mb-5">
+                <p className="text-sm text-white/50 mb-2">Rate this event</p>
+                <div className="flex gap-1 mb-3">
+                  {[1, 2, 3, 4, 5].map(n => (
+                    <button key={n} onClick={() => setMyRating(n)} type="button">
+                      <Star className={`w-6 h-6 ${n <= myRating ? "fill-brand-400 text-brand-400" : "text-white/20"}`} />
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  value={myComment}
+                  onChange={e => setMyComment(e.target.value)}
+                  placeholder="Share your experience (optional)"
+                  rows={2}
+                  className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 mb-2"
+                />
+                <div className="flex items-center gap-3">
+                  <button onClick={submitReview} className="bg-brand-500 text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-400 transition-colors">
+                    Submit review
+                  </button>
+                  {reviewMsg && <span className="text-xs text-brand-400">{reviewMsg}</span>}
+                </div>
+              </div>
+
+              {/* Review list */}
+              {reviews.length === 0 ? (
+                <p className="text-sm text-white/30">No reviews yet — be the first!</p>
+              ) : (
+                <div className="space-y-4">
+                  {reviews.map((r: any) => (
+                    <div key={r.id} className="border-b border-white/5 pb-3 last:border-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-7 h-7 rounded-full bg-brand-500/10 flex items-center justify-center">
+                          <span className="text-brand-400 text-xs font-bold">{r.user.firstName?.[0]}</span>
+                        </div>
+                        <span className="text-sm text-white/70">{r.user.firstName} {r.user.lastName?.[0]}.</span>
+                        <div className="flex ml-auto">
+                          {[1, 2, 3, 4, 5].map(n => (
+                            <Star key={n} className={`w-3.5 h-3.5 ${n <= r.rating ? "fill-brand-400 text-brand-400" : "text-white/15"}`} />
+                          ))}
+                        </div>
+                      </div>
+                      {r.comment && <p className="text-sm text-white/50 ml-9">{r.comment}</p>}
+                    </div>
                   ))}
                 </div>
               )}
