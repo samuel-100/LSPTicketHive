@@ -18,7 +18,21 @@ const checkoutSchema = z.object({
     ticketTypeId: z.string(),
     quantity: z.number().int().positive().max(10),
   })).min(1),
+  promoCode: z.string().optional(),
 });
+
+// Validate a promo code for an event; returns percentOff (0 if invalid) + the row.
+async function resolvePromo(code: string | undefined, eventId: string, organizationId: string) {
+  if (!code) return { percentOff: 0, promo: null as any };
+  const promo = await prisma.promoCode.findFirst({
+    where: { organizationId, code: code.toUpperCase(), active: true },
+  });
+  if (!promo) return { percentOff: 0, promo: null };
+  if (promo.eventId && promo.eventId !== eventId) return { percentOff: 0, promo: null };
+  if (promo.expiresAt && promo.expiresAt < new Date()) return { percentOff: 0, promo: null };
+  if (promo.maxUses != null && promo.usedCount >= promo.maxUses) return { percentOff: 0, promo: null };
+  return { percentOff: promo.percentOff, promo };
+}
 
 ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
   try {
@@ -30,6 +44,10 @@ ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
     });
 
     if (!event) return res.status(404).json({ success: false, error: "Event not found" });
+
+    // Resolve any promo code for this org/event.
+    const { percentOff, promo } = await resolvePromo(input.promoCode, event.id, event.organizationId);
+    const discountMult = (100 - percentOff) / 100;
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
     let subtotal = 0;
@@ -44,18 +62,19 @@ ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
         return res.status(400).json({ success: false, error: `Only ${available} tickets left for ${ticketType.name}` });
       }
 
-      subtotal += ticketType.price * item.quantity;
-      orderItems.push({ ticketTypeId: ticketType.id, quantity: item.quantity, price: ticketType.price });
+      const unitPrice = Math.round(ticketType.price * discountMult * 100) / 100;
+      subtotal += unitPrice * item.quantity;
+      orderItems.push({ ticketTypeId: ticketType.id, quantity: item.quantity, price: unitPrice });
 
-      if (ticketType.price > 0) {
+      if (unitPrice > 0) {
         lineItems.push({
           price_data: {
             currency: "eur",
             product_data: {
-              name: `${ticketType.name} — ${event.title}`,
+              name: `${ticketType.name} — ${event.title}${percentOff ? ` (${percentOff}% off)` : ""}`,
               description: ticketType.description || undefined,
             },
-            unit_amount: Math.round(ticketType.price * 100),
+            unit_amount: Math.round(unitPrice * 100),
           },
           quantity: item.quantity,
         });
@@ -74,6 +93,8 @@ ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
           eventId: event.id,
         },
       });
+
+      if (promo) await prisma.promoCode.update({ where: { id: promo.id }, data: { usedCount: { increment: 1 } } });
 
       const createdTickets: { qrCode: string; ticketType: string }[] = [];
       for (const item of orderItems) {
@@ -125,6 +146,8 @@ ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
         eventId: event.id,
       },
     });
+
+    if (promo) await prisma.promoCode.update({ where: { id: promo.id }, data: { usedCount: { increment: 1 } } });
 
     const sessionParams: any = {
       payment_method_types: ["card"],

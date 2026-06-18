@@ -144,3 +144,50 @@ organizerRouter.post("/events/:id/blast", authenticate, requireRole("ORGANIZER",
     res.status(500).json({ success: false, error: "Failed to send blast" });
   }
 });
+
+/* ----------------------------- Promo codes ------------------------------ */
+const promoSchema = z.object({
+  code: z.string().min(2).max(40),
+  percentOff: z.number().int().min(1).max(100),
+  maxUses: z.number().int().positive().optional(),
+  expiresAt: z.string().datetime().optional(),
+  eventId: z.string().optional(),
+});
+
+organizerRouter.get("/promos", authenticate, requireRole("ORGANIZER", "ADMIN"), async (req: AuthRequest, res) => {
+  const org = await myOrg(req.user!.userId);
+  if (!org) return res.json({ success: true, data: [] });
+  const promos = await prisma.promoCode.findMany({ where: { organizationId: org.id }, orderBy: { createdAt: "desc" } });
+  res.json({ success: true, data: promos });
+});
+
+organizerRouter.post("/promos", authenticate, requireRole("ORGANIZER", "ADMIN"), async (req: AuthRequest, res) => {
+  try {
+    const input = promoSchema.parse(req.body);
+    const org = await myOrg(req.user!.userId);
+    if (!org) return res.status(403).json({ success: false, error: "Not authorized" });
+
+    const promo = await prisma.promoCode.create({
+      data: {
+        code: input.code.toUpperCase(),
+        percentOff: input.percentOff,
+        maxUses: input.maxUses,
+        expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+        eventId: input.eventId || null,
+        organizationId: org.id,
+      },
+    });
+    res.status(201).json({ success: true, data: promo });
+  } catch (err: any) {
+    if (err instanceof z.ZodError) return res.status(400).json({ success: false, error: err.errors[0].message });
+    if (err.code === "P2002") return res.status(409).json({ success: false, error: "You already have a code with that name" });
+    res.status(500).json({ success: false, error: "Failed to create promo" });
+  }
+});
+
+organizerRouter.delete("/promos/:id", authenticate, requireRole("ORGANIZER", "ADMIN"), async (req: AuthRequest, res) => {
+  const org = await myOrg(req.user!.userId);
+  if (!org) return res.status(403).json({ success: false, error: "Not authorized" });
+  await prisma.promoCode.deleteMany({ where: { id: req.params.id, organizationId: org.id } });
+  res.json({ success: true });
+});

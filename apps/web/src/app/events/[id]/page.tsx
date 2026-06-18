@@ -67,6 +67,7 @@ export default function EventDetailPage() {
   }
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
   const [isFollowing, setIsFollowing] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [attendees, setAttendees] = useState<any[]>([]);
@@ -291,7 +292,7 @@ export default function EventDetailPage() {
       const res = await fetch(`${API_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ eventId: params.id, items }),
+        body: JSON.stringify({ eventId: params.id, items, promoCode: promoCode.trim() || undefined }),
       });
       const data = await res.json();
       if (data.data?.checkoutUrl) {
@@ -660,6 +661,12 @@ export default function EventDetailPage() {
 
               {hasSelection && (
                 <div className="mt-5 pt-5 border-t border-white/5">
+                  <input
+                    value={promoCode}
+                    onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                    placeholder="Promo code (optional)"
+                    className="w-full px-3 py-2 mb-3 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500"
+                  />
                   <div className="flex justify-between mb-2 text-sm">
                     <span className="text-white/40">{totalTickets} ticket{totalTickets > 1 ? "s" : ""}</span>
                     <span className="text-white">€{getTotal().toFixed(2)}</span>

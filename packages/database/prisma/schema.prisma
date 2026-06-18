@@ -257,3 +257,19 @@ model Follow {
   @@unique([userId, organizationId])
   @@index([organizationId])
 }
+
+model PromoCode {
+  id             String   @id @default(cuid())
+  code           String
+  percentOff     Int      // 1-100
+  maxUses        Int?     // null = unlimited
+  usedCount      Int      @default(0)
+  expiresAt      DateTime?
+  active         Boolean  @default(true)
+  organizationId String
+  eventId        String?  // null = valid for all the org's events
+  createdAt      DateTime @default(now())
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+}
