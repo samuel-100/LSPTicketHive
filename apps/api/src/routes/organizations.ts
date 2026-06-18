@@ -75,6 +75,34 @@ organizationsRouter.post("/connect-stripe", authenticate, async (req: AuthReques
   }
 });
 
+// Public: promoters (organizations) that have upcoming events in a given city.
+organizationsRouter.get("/by-city", async (req, res) => {
+  const city = (req.query.city as string || "").trim();
+  if (!city) return res.json({ success: true, data: [] });
+
+  const events = await prisma.event.findMany({
+    where: { status: "PUBLISHED", startDate: { gte: new Date() }, city: { contains: city, mode: "insensitive" } },
+    select: { organizationId: true, organization: { select: { id: true, name: true, slug: true, logoUrl: true, description: true } } },
+  });
+
+  // Dedupe orgs + count their upcoming events in this city.
+  const map = new Map<string, any>();
+  for (const e of events) {
+    const o = e.organization;
+    if (!map.has(o.id)) map.set(o.id, { ...o, eventCount: 0 });
+    map.get(o.id).eventCount++;
+  }
+
+  // Attach follower counts.
+  const orgs = Array.from(map.values());
+  for (const o of orgs) {
+    o.followers = await prisma.follow.count({ where: { organizationId: o.id } });
+  }
+  orgs.sort((a, b) => b.eventCount - a.eventCount);
+
+  res.json({ success: true, data: orgs });
+});
+
 // Get my organization
 organizationsRouter.get("/me", authenticate, async (req: AuthRequest, res) => {
   const org = await prisma.organization.findUnique({

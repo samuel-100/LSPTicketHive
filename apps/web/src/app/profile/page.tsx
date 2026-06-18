@@ -103,8 +103,14 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Cover */}
-      <div className="h-44 bg-gradient-to-br from-brand-500/30 via-brand-700/10 to-[#0a0a0a] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-30" style={{ backgroundImage: "radial-gradient(circle at 20% 50%, rgba(34,197,94,0.4), transparent 40%), radial-gradient(circle at 80% 30%, rgba(34,197,94,0.2), transparent 35%)" }} />
+      <div className="h-48 relative overflow-hidden">
+        <img
+          src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1400&q=80"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/60 to-[#0a0a0a]/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-brand-500/20 to-transparent mix-blend-overlay" />
       </div>
 
       <div className="max-w-3xl mx-auto px-6 -mt-16 relative z-10 pb-16">
@@ -145,6 +151,26 @@ export default function ProfilePage() {
           <Stat icon={<Heart className="w-4 h-4" />} label="Following" value={user._count?.following ?? 0} />
           <Stat icon={<Users className="w-4 h-4" />} label="Orders" value={user._count?.orders ?? 0} />
         </div>
+
+        {/* Your city — discover locally */}
+        {city.trim() && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <MapPin className="w-4 h-4 text-brand-400" />
+              <span className="text-white font-medium">Happening in {city}</span>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <a href={`/events?city=${encodeURIComponent(city)}`} className="flex-1 min-w-[140px] bg-brand-500/10 border border-brand-500/20 rounded-xl px-4 py-3 hover:bg-brand-500/15 transition-colors">
+                <div className="text-sm font-semibold text-brand-400">Events near you →</div>
+                <div className="text-xs text-white/40">Browse what&apos;s on in {city}</div>
+              </a>
+              <a href={`/promoters?city=${encodeURIComponent(city)}`} className="flex-1 min-w-[140px] bg-white/5 border border-white/10 rounded-xl px-4 py-3 hover:bg-white/10 transition-colors">
+                <div className="text-sm font-semibold text-white">Promoters in {city} →</div>
+                <div className="text-xs text-white/40">Organizers putting on events here</div>
+              </a>
+            </div>
+          </motion.div>
+        )}
 
         {/* Upgrade to business (attendees only) */}
         {!isBusiness && (
