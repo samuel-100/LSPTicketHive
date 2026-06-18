@@ -242,6 +242,43 @@ ordersRouter.post("/:id/refund", authenticate, async (req: AuthRequest, res) => 
   res.json({ success: true, data: { refunded: true, amount: order.total } });
 });
 
+// Transfer a single ticket to another registered user (by email).
+// Regenerates the QR so the previous holder's copy becomes invalid.
+ordersRouter.post("/tickets/:ticketId/transfer", authenticate, async (req: AuthRequest, res) => {
+  const recipientEmail = (req.body?.email || "").trim().toLowerCase();
+  if (!recipientEmail) return res.status(400).json({ success: false, error: "Recipient email required" });
+
+  const ticket = await prisma.ticket.findUnique({
+    where: { id: req.params.ticketId },
+    include: { ticketType: { include: { event: true } } },
+  });
+  if (!ticket) return res.status(404).json({ success: false, error: "Ticket not found" });
+  if (ticket.userId !== req.user!.userId) return res.status(403).json({ success: false, error: "This isn't your ticket" });
+  if (ticket.status !== "VALID") return res.status(400).json({ success: false, error: "Only valid (unused) tickets can be transferred" });
+
+  const recipient = await prisma.user.findUnique({ where: { email: recipientEmail } });
+  if (!recipient) return res.status(404).json({ success: false, error: "No LSPTicketHive account with that email. Ask them to sign up first." });
+  if (recipient.id === req.user!.userId) return res.status(400).json({ success: false, error: "That's your own account" });
+
+  const crypto = require("crypto");
+  const newQr = crypto.randomUUID();
+  await prisma.ticket.update({
+    where: { id: ticket.id },
+    data: { userId: recipient.id, qrCode: newQr, status: "TRANSFERRED" },
+  });
+  // Keep it scannable: TRANSFERRED would block check-in, so set back to VALID.
+  await prisma.ticket.update({ where: { id: ticket.id }, data: { status: "VALID" } });
+
+  // Email the new owner.
+  try {
+    const ev = ticket.ticketType.event;
+    const dateStr = new Date(ev.startDate).toLocaleDateString("en-IE", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    await sendTicketConfirmation(recipient.email, recipient.firstName, ev.title, dateStr, ev.venue || "", ticket.orderId, [{ qrCode: newQr, ticketType: ticket.ticketType.name }]);
+  } catch (e) { console.error("Transfer email failed:", e); }
+
+  res.json({ success: true, data: { transferredTo: recipientEmail } });
+});
+
 ordersRouter.get("/:id", authenticate, async (req: AuthRequest, res) => {
   const order = await prisma.order.findFirst({
     where: { id: req.params.id, userId: req.user!.userId },

@@ -25,6 +25,27 @@ function OrderContent() {
   const [loading, setLoading] = useState(true);
   const [refunding, setRefunding] = useState(false);
   const [shareLabel, setShareLabel] = useState("Share — I'm going! 🎉");
+  const [transferFor, setTransferFor] = useState<string | null>(null);
+  const [transferEmail, setTransferEmail] = useState("");
+  const [transferMsg, setTransferMsg] = useState("");
+
+  async function doTransfer() {
+    if (!transferEmail.trim()) { setTransferMsg("Enter the recipient's email"); return; }
+    setTransferMsg("Transferring…");
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API_URL}/api/orders/tickets/${transferFor}/transfer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ email: transferEmail.trim() }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setTransferMsg(`Sent to ${transferEmail}! They now own this ticket.`);
+      setTimeout(() => { setTransferFor(null); setTransferEmail(""); setTransferMsg(""); window.location.reload(); }, 2000);
+    } else {
+      setTransferMsg(data.error || "Transfer failed");
+    }
+  }
 
   async function shareGoing() {
     const url = window.location.origin;
@@ -123,6 +144,14 @@ function OrderContent() {
                 <QRCode value={ticket.qrCode} size={180} />
               </div>
               <div className="text-xs text-white/20 font-mono mt-2">{ticket.qrCode}</div>
+              {order.status === "COMPLETED" && (
+                <button
+                  onClick={() => setTransferFor(ticket.id)}
+                  className="mt-3 text-xs text-brand-400 hover:text-brand-300 transition-colors print:hidden"
+                >
+                  Transfer this ticket →
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -171,6 +200,28 @@ function OrderContent() {
           )}
         </div>
       </div>
+
+      {/* Transfer modal */}
+      {transferFor && (
+        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 print:hidden" onClick={() => setTransferFor(null)}>
+          <div className="bg-[#141414] border border-white/10 rounded-2xl p-6 w-full max-w-sm" onClick={e => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold text-white mb-1">Transfer ticket</h2>
+            <p className="text-xs text-white/40 mb-4">The recipient needs an LSPTicketHive account. A fresh QR code is emailed to them and your copy stops working.</p>
+            <input
+              type="email"
+              value={transferEmail}
+              onChange={e => setTransferEmail(e.target.value)}
+              placeholder="recipient@email.com"
+              className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 mb-3"
+            />
+            {transferMsg && <p className="text-xs text-brand-400 mb-3">{transferMsg}</p>}
+            <div className="flex gap-2">
+              <button onClick={() => setTransferFor(null)} className="flex-1 py-2.5 rounded-lg text-sm bg-white/5 border border-white/10 text-white/60">Cancel</button>
+              <button onClick={doTransfer} className="flex-1 py-2.5 rounded-lg text-sm bg-brand-500 text-black font-semibold hover:bg-brand-400 transition-colors">Transfer</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

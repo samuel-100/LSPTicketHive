@@ -115,10 +115,9 @@ export default function HomePage() {
             </div>
             <div className="flex flex-wrap gap-4 text-xs text-white/30">
               <span>&copy; 2026 LSPTicketHive</span>
-              <a href="#" className="hover:text-white/60">Terms</a>
-              <a href="#" className="hover:text-white/60">Privacy</a>
-              <a href="#" className="hover:text-white/60">Cookies</a>
-              <a href="#" className="hover:text-white/60">Security</a>
+              <Link href="/legal/terms" className="hover:text-white/60">Terms</Link>
+              <Link href="/legal/privacy" className="hover:text-white/60">Privacy</Link>
+              <Link href="/legal/refund" className="hover:text-white/60">Refunds</Link>
               <span>Ireland 🇮🇪</span>
             </div>
           </div>
