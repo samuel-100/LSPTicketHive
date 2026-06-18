@@ -24,6 +24,20 @@ function OrderContent() {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refunding, setRefunding] = useState(false);
+  const [shareLabel, setShareLabel] = useState("Share — I'm going! 🎉");
+
+  async function shareGoing() {
+    const url = window.location.origin;
+    const data = { title: order?.event.title || "Event", text: `I'm going to ${order?.event.title}! 🎉 Get tickets on LSPTicketHive`, url };
+    if ((navigator as any).share) {
+      try { await (navigator as any).share(data); return; } catch { /* cancelled */ }
+    }
+    try {
+      await navigator.clipboard.writeText(`I'm going to ${order?.event.title}! ${url}`);
+      setShareLabel("Copied!");
+      setTimeout(() => setShareLabel("Share — I'm going! 🎉"), 2000);
+    } catch { /* ignore */ }
+  }
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -132,10 +146,16 @@ function OrderContent() {
         {/* Actions */}
         <div className="mt-4 flex gap-2 print:hidden">
           <button
+            onClick={shareGoing}
+            className="flex-1 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors"
+          >
+            {shareLabel}
+          </button>
+          <button
             onClick={() => window.print()}
             className="flex-1 bg-white/5 border border-white/10 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-white/10 transition-colors"
           >
-            Download / Print Receipt
+            Receipt
           </button>
           {order.status === "COMPLETED" && (
             <button

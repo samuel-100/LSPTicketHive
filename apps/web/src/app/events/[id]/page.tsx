@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, MapPin, Clock, Users, Minus, Plus, Ticket, ArrowLeft, CalendarPlus, Share2, Heart, Star } from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Minus, Plus, Ticket, ArrowLeft, CalendarPlus, Share2, Heart, Star, ThumbsUp, MessageCircle } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -143,6 +143,10 @@ export default function EventDetailPage() {
   }
 
   const [saved, setSaved] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [comments, setComments] = useState<any[]>([]);
+  const [newComment, setNewComment] = useState("");
   const [reviews, setReviews] = useState<any[]>([]);
   const [reviewAvg, setReviewAvg] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
@@ -162,7 +166,37 @@ export default function EventDetailPage() {
       .then(r => r.json()).then(d => {
         if (d.data) { setReviews(d.data.reviews); setReviewAvg(d.data.average); setReviewCount(d.data.count); }
       }).catch(() => {});
+    // Likes (sends token if present so we know if I liked it)
+    fetch(`${API_URL}/api/engagement/likes/${event.id}`, token ? { headers: { Authorization: `Bearer ${token}` } } : undefined)
+      .then(r => r.json()).then(d => { if (d.data) { setLiked(d.data.liked); setLikeCount(d.data.count); } }).catch(() => {});
+    // Comments
+    fetch(`${API_URL}/api/engagement/comments/${event.id}`)
+      .then(r => r.json()).then(d => { if (d.data) setComments(d.data); }).catch(() => {});
   }, [event]);
+
+  async function toggleLike() {
+    const token = localStorage.getItem("token");
+    if (!token) { window.location.href = "/login"; return; }
+    setLiked(!liked); setLikeCount(c => c + (liked ? -1 : 1)); // optimistic
+    const res = await fetch(`${API_URL}/api/engagement/likes/${event!.id}`, {
+      method: "POST", headers: { Authorization: `Bearer ${token}` },
+    });
+    const d = await res.json();
+    if (d.data) { setLiked(d.data.liked); setLikeCount(d.data.count); }
+  }
+
+  async function postComment() {
+    const token = localStorage.getItem("token");
+    if (!token) { window.location.href = "/login"; return; }
+    if (!newComment.trim()) return;
+    const res = await fetch(`${API_URL}/api/engagement/comments/${event!.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ text: newComment.trim() }),
+    });
+    const d = await res.json();
+    if (d.success) { setComments(c => [d.data, ...c]); setNewComment(""); }
+  }
 
   async function toggleSave() {
     const token = localStorage.getItem("token");
@@ -398,6 +432,13 @@ export default function EventDetailPage() {
               <Heart className={`w-4 h-4 ${saved ? "fill-brand-400 text-brand-400" : "text-brand-400"}`} />
               {saved ? "Saved" : "Save"}
             </button>
+            <button
+              onClick={toggleLike}
+              className={`flex items-center gap-2 border px-4 py-2 rounded-lg text-sm font-medium transition-colors ${liked ? "bg-pink-500/10 border-pink-500/30 text-pink-400" : "bg-white/5 border-white/10 text-white hover:border-pink-500/40"}`}
+            >
+              <ThumbsUp className={`w-4 h-4 ${liked ? "fill-pink-400 text-pink-400" : "text-pink-400"}`} />
+              {likeCount > 0 ? likeCount : ""} {liked ? "Liked" : "Like"}
+            </button>
           </div>
           </div>
         </div>
@@ -474,6 +515,41 @@ export default function EventDetailPage() {
                         </div>
                       </div>
                       {r.comment && <p className="text-sm text-white/50 ml-9">{r.comment}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Comments / discussion */}
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 md:p-8">
+              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-brand-400" /> Discussion
+                {comments.length > 0 && <span className="text-white/30 text-sm">({comments.length})</span>}
+              </h2>
+              <div className="flex gap-2 mb-5">
+                <input
+                  value={newComment}
+                  onChange={e => setNewComment(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && postComment()}
+                  placeholder="Ask a question or say something…"
+                  className="flex-1 px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500"
+                />
+                <button onClick={postComment} className="bg-brand-500 text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-400 transition-colors">Post</button>
+              </div>
+              {comments.length === 0 ? (
+                <p className="text-sm text-white/30">No comments yet — start the conversation!</p>
+              ) : (
+                <div className="space-y-4">
+                  {comments.map((c: any) => (
+                    <div key={c.id} className="flex gap-3">
+                      <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center shrink-0">
+                        {c.user.avatarUrl ? <img src={c.user.avatarUrl} className="w-full h-full rounded-full object-cover" alt="" /> : <span className="text-brand-400 text-xs font-bold">{c.user.firstName?.[0]}</span>}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm text-white/70">{c.user.firstName} {c.user.lastName?.[0]}. <span className="text-white/20 text-xs ml-1">{new Date(c.createdAt).toLocaleDateString("en-IE", { day: "numeric", month: "short" })}</span></div>
+                        <p className="text-sm text-white/50">{c.text}</p>
+                      </div>
                     </div>
                   ))}
                 </div>

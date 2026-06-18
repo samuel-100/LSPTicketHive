@@ -66,6 +66,7 @@ model User {
   reviews        Review[]
   savedEvents    SavedEvent[]
   following      Follow[]     @relation("UserFollowing")
+  comments       EventComment[]
 
   @@index([email])
 }
@@ -256,6 +257,28 @@ model Follow {
 
   @@unique([userId, organizationId])
   @@index([organizationId])
+}
+
+model EventLike {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventId])
+  @@index([eventId])
+}
+
+model EventComment {
+  id        String   @id @default(cuid())
+  text      String
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([eventId])
 }
 
 model PromoCode {

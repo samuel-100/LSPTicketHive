@@ -50,6 +50,67 @@ engagementRouter.get("/saved", authenticate, async (req: AuthRequest, res) => {
   res.json({ success: true, data: saved.map((s: any) => s.event) });
 });
 
+/* --------------------------------- Likes --------------------------------- */
+
+// Public like count + (if logged in) whether I liked it.
+engagementRouter.get("/likes/:eventId", async (req: AuthRequest, res) => {
+  const count = await prisma.eventLike.count({ where: { eventId: req.params.eventId } });
+  let liked = false;
+  const token = req.cookies?.token || req.headers.authorization?.replace("Bearer ", "");
+  if (token) {
+    try {
+      const jwt = require("jsonwebtoken");
+      const payload = jwt.verify(token, process.env.JWT_SECRET || "dev-secret-change-in-production");
+      liked = !!(await prisma.eventLike.findUnique({ where: { userId_eventId: { userId: payload.userId, eventId: req.params.eventId } } }));
+    } catch { /* not logged in */ }
+  }
+  res.json({ success: true, data: { count, liked } });
+});
+
+// Toggle like.
+engagementRouter.post("/likes/:eventId", authenticate, async (req: AuthRequest, res) => {
+  const { eventId } = req.params;
+  const userId = req.user!.userId;
+  const existing = await prisma.eventLike.findUnique({ where: { userId_eventId: { userId, eventId } } });
+  if (existing) {
+    await prisma.eventLike.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.eventLike.create({ data: { userId, eventId } });
+  }
+  const count = await prisma.eventLike.count({ where: { eventId } });
+  res.json({ success: true, data: { liked: !existing, count } });
+});
+
+/* ------------------------------- Comments -------------------------------- */
+
+engagementRouter.get("/comments/:eventId", async (req, res) => {
+  const comments = await prisma.eventComment.findMany({
+    where: { eventId: req.params.eventId },
+    include: { user: { select: { firstName: true, lastName: true, avatarUrl: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+  res.json({ success: true, data: comments });
+});
+
+engagementRouter.post("/comments/:eventId", authenticate, async (req: AuthRequest, res) => {
+  const text = (req.body?.text || "").trim();
+  if (!text) return res.status(400).json({ success: false, error: "Comment cannot be empty" });
+  if (text.length > 1000) return res.status(400).json({ success: false, error: "Comment too long" });
+
+  const comment = await prisma.eventComment.create({
+    data: { text, userId: req.user!.userId, eventId: req.params.eventId },
+    include: { user: { select: { firstName: true, lastName: true, avatarUrl: true } } },
+  });
+  res.status(201).json({ success: true, data: comment });
+});
+
+engagementRouter.delete("/comments/:id", authenticate, async (req: AuthRequest, res) => {
+  // Only the author can delete their comment.
+  await prisma.eventComment.deleteMany({ where: { id: req.params.id, userId: req.user!.userId } });
+  res.json({ success: true });
+});
+
 /* -------------------------------- Reviews -------------------------------- */
 
 const reviewSchema = z.object({
