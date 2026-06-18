@@ -234,6 +234,7 @@ export default function Navbar() {
           {user ? (
             <>
               {user.role === "ORGANIZER" && <NavLink href="/dashboard/create" active={isActive("/dashboard/create")}>Create</NavLink>}
+              <NavLink href="/promote" active={isActive("/promote")}>Promote & Earn</NavLink>
               <NavLink href="/saved" active={isActive("/saved")}>Saved</NavLink>
               <NavLink href="/tickets" active={isActive("/tickets")}>Tickets</NavLink>
               {user.role === "ORGANIZER" && <NavLink href="/dashboard" active={isActive("/dashboard")}>Dashboard</NavLink>}

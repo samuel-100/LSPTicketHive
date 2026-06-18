@@ -117,6 +117,8 @@ model Event {
   tags           String[]
   totalCapacity  Int
   organizationId String
+  promotable     Boolean     @default(false)  // open to promoters?
+  commissionRate Float       @default(10)      // % a promoter earns per sale
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
@@ -164,6 +166,8 @@ model Order {
   stripePaymentId String?     @unique
   userId          String
   eventId         String
+  promoterId      String?     // attributed promoter (referral)
+  commission      Float       @default(0)  // amount the promoter earns on this order
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 

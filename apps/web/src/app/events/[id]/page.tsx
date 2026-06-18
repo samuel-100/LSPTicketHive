@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Calendar, MapPin, Clock, Users, Minus, Plus, Ticket, ArrowLeft, CalendarPlus, Share2, Heart, Star, ThumbsUp, MessageCircle } from "lucide-react";
 import { motion } from "framer-motion";
@@ -39,11 +39,23 @@ interface EventDetail {
   totalCapacity: number;
   ticketTypes: TicketType[];
   organizationId: string;
+  promotable?: boolean;
+  commissionRate?: number;
   organization: { id: string; name: string; slug: string };
 }
 
 export default function EventDetailPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0a0a0a]" />}>
+      <EventDetailInner />
+    </Suspense>
+  );
+}
+
+function EventDetailInner() {
   const params = useParams();
+  const searchParams = useSearchParams();
+  const ref = searchParams.get("ref") || "";
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -270,6 +282,21 @@ export default function EventDetailPage() {
     }
   }
 
+  const [promoteLabel, setPromoteLabel] = useState("Promote & Earn");
+  async function promoteEvent() {
+    const userStr = localStorage.getItem("user");
+    if (!userStr) { window.location.href = "/login"; return; }
+    const me = JSON.parse(userStr);
+    const link = `${window.location.origin}/events/${params.id}?ref=${me.id}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      setPromoteLabel("Link copied! Share to earn");
+      setTimeout(() => setPromoteLabel("Promote & Earn"), 2500);
+    } catch {
+      prompt("Share this link to earn commission:", link);
+    }
+  }
+
   const [shareLabel, setShareLabel] = useState("Share");
   async function shareEvent() {
     const url = typeof window !== "undefined" ? window.location.href : "";
@@ -327,7 +354,7 @@ export default function EventDetailPage() {
       const res = await fetch(`${API_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ eventId: params.id, items, promoCode: promoCode.trim() || undefined }),
+        body: JSON.stringify({ eventId: params.id, items, promoCode: promoCode.trim() || undefined, ref: ref || undefined }),
       });
       const data = await res.json();
       if (data.data?.checkoutUrl) {
@@ -454,6 +481,14 @@ export default function EventDetailPage() {
               <ThumbsUp className={`w-4 h-4 ${liked ? "fill-pink-400 text-pink-400" : "text-pink-400"}`} />
               {likeCount > 0 ? likeCount : ""} {liked ? "Liked" : "Like"}
             </button>
+            {event.promotable && (
+              <button
+                onClick={promoteEvent}
+                className="flex items-center gap-2 bg-brand-500/15 border border-brand-500/30 text-brand-400 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-500/25 transition-colors"
+              >
+                💸 {promoteLabel} ({event.commissionRate || 0}%)
+              </button>
+            )}
           </div>
           </motion.div>
         </div>

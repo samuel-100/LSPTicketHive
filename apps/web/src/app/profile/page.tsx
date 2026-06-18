@@ -147,11 +147,11 @@ export default function ProfilePage() {
           {uploading && <span className="text-xs text-brand-400">Uploading…</span>}
         </motion.div>
 
-        {/* Stats */}
+        {/* Stats — clickable */}
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <Stat icon={<Ticket className="w-4 h-4" />} label="Tickets" value={user._count?.tickets ?? 0} />
-          <Stat icon={<Heart className="w-4 h-4" />} label="Following" value={user._count?.following ?? 0} />
-          <Stat icon={<Users className="w-4 h-4" />} label="Orders" value={user._count?.orders ?? 0} />
+          <Stat href="/tickets" icon={<Ticket className="w-4 h-4" />} label="Tickets" value={user._count?.tickets ?? 0} />
+          <Stat href="/saved" icon={<Heart className="w-4 h-4" />} label="Following" value={user._count?.following ?? 0} />
+          <Stat href="/tickets" icon={<Users className="w-4 h-4" />} label="Orders" value={user._count?.orders ?? 0} />
         </div>
 
         {/* Your city — discover locally */}
@@ -235,12 +235,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
-  return (
-    <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 text-center">
+function Stat({ icon, label, value, href }: { icon: React.ReactNode; label: string; value: number; href?: string }) {
+  const inner = (
+    <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 text-center hover:border-brand-500/30 hover:bg-white/[0.04] transition-all h-full">
       <div className="text-brand-400 flex justify-center mb-1.5">{icon}</div>
       <div className="text-xl font-bold text-white">{value}</div>
       <div className="text-xs text-white/30">{label}</div>
     </div>
   );
+  return href ? <a href={href}>{inner}</a> : inner;
 }

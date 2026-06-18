@@ -13,6 +13,7 @@ import { uploadRouter } from "./routes/upload";
 import { followRouter } from "./routes/follow";
 import { engagementRouter } from "./routes/engagement";
 import { organizerRouter } from "./routes/organizer";
+import { promoterRouter } from "./routes/promoter";
 import { oauthRouter } from "./routes/oauth";
 import passport from "passport";
 
@@ -37,6 +38,7 @@ app.use("/api/upload", uploadRouter);
 app.use("/api/follow", followRouter);
 app.use("/api/engagement", engagementRouter);
 app.use("/api/organizer", organizerRouter);
+app.use("/api/promoter", promoterRouter);
 app.use(passport.initialize());
 app.use("/api/auth", oauthRouter);
 

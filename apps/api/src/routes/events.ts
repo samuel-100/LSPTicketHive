@@ -22,6 +22,8 @@ const createEventSchema = z.object({
   category: z.string().optional(),
   tags: z.array(z.string()).optional(),
   totalCapacity: z.number().int().positive(),
+  promotable: z.boolean().optional(),
+  commissionRate: z.number().min(0).max(50).optional(),
   ticketTypes: z.array(z.object({
     name: z.string().min(1),
     description: z.string().optional(),
@@ -143,6 +145,8 @@ eventsRouter.post("/", authenticate, async (req: AuthRequest, res) => {
         category: input.category,
         tags: input.tags || [],
         totalCapacity: input.totalCapacity,
+        promotable: input.promotable ?? false,
+        commissionRate: input.commissionRate ?? 10,
         organizationId: org.id,
         ticketTypes: {
           create: input.ticketTypes,

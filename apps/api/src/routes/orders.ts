@@ -19,7 +19,19 @@ const checkoutSchema = z.object({
     quantity: z.number().int().positive().max(10),
   })).min(1),
   promoCode: z.string().optional(),
+  ref: z.string().optional(), // promoter (referral) user id
 });
+
+// Resolve a valid promoter for an event: must be promotable, ref must be a real
+// user who isn't the buyer or the organizer. Returns {promoterId, rate} or nulls.
+async function resolvePromoter(ref: string | undefined, event: any, buyerId: string) {
+  if (!ref || !event.promotable) return { promoterId: null as string | null, rate: 0 };
+  if (ref === buyerId) return { promoterId: null, rate: 0 };
+  if (ref === event.organization?.ownerId) return { promoterId: null, rate: 0 };
+  const promoter = await prisma.user.findUnique({ where: { id: ref } });
+  if (!promoter) return { promoterId: null, rate: 0 };
+  return { promoterId: promoter.id, rate: event.commissionRate || 0 };
+}
 
 // Validate a promo code for an event; returns percentOff (0 if invalid) + the row.
 async function resolvePromo(code: string | undefined, eventId: string, organizationId: string) {
@@ -47,6 +59,7 @@ ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
 
     // Resolve any promo code for this org/event.
     const { percentOff, promo } = await resolvePromo(input.promoCode, event.id, event.organizationId);
+    const { promoterId, rate: promoterRate } = await resolvePromoter(input.ref, event, req.user!.userId);
     const discountMult = (100 - percentOff) / 100;
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
@@ -91,6 +104,8 @@ ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
           status: "COMPLETED",
           userId: req.user!.userId,
           eventId: event.id,
+          promoterId,
+          commission: 0, // free tickets earn no commission
         },
       });
 
@@ -135,6 +150,7 @@ ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
       quantity: 1,
     });
 
+    const commission = promoterId ? Math.round(subtotal * (promoterRate / 100) * 100) / 100 : 0;
     const order = await prisma.order.create({
       data: {
         subtotal,
@@ -144,6 +160,8 @@ ordersRouter.post("/", authenticate, async (req: AuthRequest, res) => {
         status: "PENDING",
         userId: req.user!.userId,
         eventId: event.id,
+        promoterId,
+        commission,
       },
     });
 

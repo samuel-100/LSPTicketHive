@@ -34,6 +34,8 @@ export default function CreateEventPage() {
     endDate: "",
     category: "Music",
     totalCapacity: 100,
+    promotable: false,
+    commissionRate: 10,
   });
 
   const [tickets, setTickets] = useState<TicketTier[]>([
@@ -322,6 +324,33 @@ export default function CreateEventPage() {
                   className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 transition-colors"
                 />
               </div>
+            </div>
+          </section>
+
+          {/* Promoters */}
+          <section>
+            <h2 className="text-xl font-semibold text-white mb-4">Promoters</h2>
+            <div className="bg-white/[0.02] border border-white/5 rounded-xl p-5">
+              <label className="flex items-center justify-between cursor-pointer">
+                <div>
+                  <div className="text-white font-medium">Open this event to promoters</div>
+                  <div className="text-white/40 text-sm">Let anyone share your event and earn commission on each sale they drive.</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, promotable: !form.promotable })}
+                  className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${form.promotable ? "bg-brand-500" : "bg-white/10"}`}
+                >
+                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full transition-all ${form.promotable ? "left-6" : "left-0.5"}`} />
+                </button>
+              </label>
+              {form.promotable && (
+                <div className="mt-4 pt-4 border-t border-white/5">
+                  <label className="block text-sm font-medium text-white/60 mb-2">Commission per sale: {form.commissionRate}%</label>
+                  <input type="range" min={1} max={30} value={form.commissionRate} onChange={e => setForm({ ...form, commissionRate: Number(e.target.value) })} className="w-full accent-brand-500" />
+                  <div className="flex justify-between text-xs text-white/30 mt-1"><span>1%</span><span>30%</span></div>
+                </div>
+              )}
             </div>
           </section>
 
