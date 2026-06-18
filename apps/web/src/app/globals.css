@@ -6,7 +6,16 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
   background-color: #0a0a0a;
   color: #ffffff;
+  font-weight: 450;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+/* Slightly heavier baseline so copy reads crisper, esp. muted text. */
+p, span, a, button, label, input, textarea, li, div {
+  font-weight: inherit;
+}
+h1, h2, h3, h4 { letter-spacing: -0.01em; }
 
 /* ---- Light mode: remap the dark utility classes the app uses ---- */
 /* The whole app is built dark; in light mode we override the recurring
