@@ -151,7 +151,7 @@ function EventsContent() {
           </select>
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Filters Sidebar */}
           <aside className="hidden lg:block w-52 shrink-0">
             <div className="sticky top-20 space-y-6">

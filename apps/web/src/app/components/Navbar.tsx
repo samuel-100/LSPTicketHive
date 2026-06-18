@@ -274,27 +274,38 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile Menu Toggle */}
-        <button className="md:hidden text-white/60" onClick={() => setMenuOpen(!menuOpen)}>
-          {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        {/* Mobile right controls */}
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeToggle />
+          <button className="text-white/60 p-1" onClick={() => setMenuOpen(!menuOpen)}>
+            {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-white/5 bg-[#0a0a0a] px-6 py-4 space-y-3">
+        <div className="md:hidden border-t border-white/5 bg-[#0a0a0a] px-5 py-4 space-y-1 max-h-[80vh] overflow-y-auto">
+          {/* Mobile search */}
+          <form onSubmit={(e) => { handleSearch(e); setMenuOpen(false); }} className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-3 py-2 mb-3">
+            <Search className="w-4 h-4 text-white/30 shrink-0" />
+            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search events" className="bg-transparent text-sm text-white placeholder:text-white/25 outline-none w-full" />
+          </form>
+
           <MobileLink href="/" onClick={() => setMenuOpen(false)}>Home</MobileLink>
           <MobileLink href="/events" onClick={() => setMenuOpen(false)}>Find Events</MobileLink>
           {user && user.role === "ORGANIZER" && <MobileLink href="/dashboard/create" onClick={() => setMenuOpen(false)}>Create Events</MobileLink>}
+          {user && user.role === "ORGANIZER" && <MobileLink href="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</MobileLink>}
+          {user && user.role === "ORGANIZER" && <MobileLink href="/dashboard/find-promoters" onClick={() => setMenuOpen(false)}>Find Promoters</MobileLink>}
+          {user && user.role !== "ORGANIZER" && <MobileLink href="/promote" onClick={() => setMenuOpen(false)}>Promote & Earn</MobileLink>}
+          {user && <MobileLink href="/messages" onClick={() => setMenuOpen(false)}>Messages</MobileLink>}
           {user && <MobileLink href="/saved" onClick={() => setMenuOpen(false)}>Saved Events</MobileLink>}
           {user && <MobileLink href="/tickets" onClick={() => setMenuOpen(false)}>My Tickets</MobileLink>}
-          {user && user.role === "ORGANIZER" && <MobileLink href="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</MobileLink>}
-          {user && user.role === "ORGANIZER" && <MobileLink href="/dashboard/scan" onClick={() => setMenuOpen(false)}>Scan Tickets</MobileLink>}
           {user && <MobileLink href="/profile" onClick={() => setMenuOpen(false)}>Profile</MobileLink>}
           {!user && <MobileLink href="/login" onClick={() => setMenuOpen(false)}>Sign in</MobileLink>}
           {!user && <MobileLink href="/register" onClick={() => setMenuOpen(false)}>Sign up</MobileLink>}
           {user && (
-            <button onClick={handleLogout} className="block text-sm text-red-400 py-2">Log out</button>
+            <button onClick={handleLogout} className="block text-sm text-red-400 py-2 w-full text-left">Log out</button>
           )}
         </div>
       )}
