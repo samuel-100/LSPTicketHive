@@ -31,6 +31,7 @@ function EventsContent() {
   const [category, setCategory] = useState("");
   const [dateFilter, setDateFilter] = useState("");
   const [priceFilter, setPriceFilter] = useState("");
+  const [sort, setSort] = useState(searchParams.get("sort") || "date");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,6 +42,12 @@ function EventsContent() {
     fetchEvents(urlSearch, urlCity, "");
   }, [searchParams]);
 
+  // Refetch when the sort option changes.
+  useEffect(() => {
+    fetchEvents(search, city, category);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sort]);
+
   async function fetchEvents(query?: string, filterCity?: string, filterCat?: string) {
     setLoading(true);
     try {
@@ -48,6 +55,7 @@ function EventsContent() {
       if (query || search) params.set("search", query || search);
       if (filterCity || city) params.set("city", filterCity || city);
       if (filterCat || category) params.set("category", filterCat || category);
+      if (sort && sort !== "date") params.set("sort", sort);
       const res = await fetch(`${API_URL}/api/events?${params}`, { credentials: "include" });
       const data = await res.json();
       setEvents(data.data?.items || []);
@@ -123,11 +131,22 @@ function EventsContent() {
     <div className="min-h-screen bg-[#0a0a0a]">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-white">
-            {city ? `Events in ${city}` : "All Events"}
-          </h1>
-          <p className="text-white/40 text-sm mt-1">Find something you love in your area</p>
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">
+              {city ? `Events in ${city}` : "All Events"}
+            </h1>
+            <p className="text-white/40 text-sm mt-1">Find something you love in your area</p>
+          </div>
+          <select
+            value={sort}
+            onChange={e => { setSort(e.target.value); }}
+            className="bg-white/5 border border-white/10 rounded-lg text-sm text-white px-3 py-2 focus:outline-none focus:border-brand-500"
+          >
+            <option value="date">Soonest</option>
+            <option value="popular">Trending</option>
+            <option value="new">Newest</option>
+          </select>
         </div>
 
         <div className="flex gap-8">

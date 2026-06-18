@@ -36,7 +36,7 @@ const createEventSchema = z.object({
 
 // Public: list published events
 eventsRouter.get("/", async (req, res) => {
-  const { page = "1", limit = "20", category, city, search } = req.query;
+  const { page = "1", limit = "20", category, city, search, sort } = req.query;
   const pageNum = Math.max(1, parseInt(page as string));
   const pageSize = Math.min(50, parseInt(limit as string));
 
@@ -45,18 +45,57 @@ eventsRouter.get("/", async (req, res) => {
   if (city) where.city = { contains: city as string, mode: "insensitive" };
   if (search) where.title = { contains: search as string, mode: "insensitive" };
 
+  // Sort options: date (default), soon, new. "popular" handled below.
+  let orderBy: any = { startDate: "asc" };
+  if (sort === "new") orderBy = { createdAt: "desc" };
+
   const [items, total] = await Promise.all([
     prisma.event.findMany({
       where,
       include: { ticketTypes: true, organization: { select: { id: true, name: true, slug: true, logoUrl: true } } },
-      orderBy: { startDate: "asc" },
+      orderBy,
       skip: (pageNum - 1) * pageSize,
       take: pageSize,
     }),
     prisma.event.count({ where }),
   ]);
 
-  res.json({ success: true, data: { items, total, page: pageNum, pageSize, hasMore: pageNum * pageSize < total } });
+  // "popular" = most tickets sold (computed in-memory for the page).
+  let sorted = items;
+  if (sort === "popular") {
+    sorted = [...items].sort((a: any, b: any) => {
+      const sold = (e: any) => e.ticketTypes.reduce((s: number, t: any) => s + t.sold, 0);
+      return sold(b) - sold(a);
+    });
+  }
+
+  res.json({ success: true, data: { items: sorted, total, page: pageNum, pageSize, hasMore: pageNum * pageSize < total } });
+});
+
+// Category counts for the discovery page (only upcoming published events).
+eventsRouter.get("/meta/categories", async (_req, res) => {
+  const grouped = await prisma.event.groupBy({
+    by: ["category"],
+    where: { status: "PUBLISHED", startDate: { gte: new Date() } },
+    _count: { _all: true },
+  });
+  const counts: Record<string, number> = {};
+  for (const g of grouped) if (g.category) counts[g.category] = g._count._all;
+  res.json({ success: true, data: counts });
+});
+
+// Trending = most tickets sold among upcoming events.
+eventsRouter.get("/meta/trending", async (_req, res) => {
+  const events = await prisma.event.findMany({
+    where: { status: "PUBLISHED", startDate: { gte: new Date() } },
+    include: { ticketTypes: true, organization: { select: { name: true } } },
+    take: 30,
+  });
+  const ranked = events
+    .map((e: any) => ({ ...e, _sold: e.ticketTypes.reduce((s: number, t: any) => s + t.sold, 0) }))
+    .sort((a: any, b: any) => b._sold - a._sold)
+    .slice(0, 8);
+  res.json({ success: true, data: ranked });
 });
 
 // Public: get single event

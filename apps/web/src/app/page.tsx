@@ -5,6 +5,7 @@ import HeroButtons from "./components/HeroButtons";
 
 const HeroScene = dynamic(() => import("./components/HeroScene"), { ssr: false });
 const EventsGrid = dynamic(() => import("./components/EventsGrid"), { ssr: false });
+const CategoryStrip = dynamic(() => import("./components/CategoryStrip"), { ssr: false });
 
 export default function HomePage() {
   return (
@@ -25,19 +26,43 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Events Section - THE MAIN CONTENT */}
+      {/* Browse by category */}
+      <section className="py-10 px-6 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-2xl font-bold text-white mb-6">Browse by category</h2>
+          <CategoryStrip />
+        </div>
+      </section>
+
+      {/* Trending */}
       <section className="py-12 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-2xl font-bold text-white">Popular events near you</h2>
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">🔥 Trending now</h2>
+              <p className="text-white/40 text-sm mt-1">The hottest events selling fast</p>
+            </div>
+            <Link href="/events?sort=popular" className="text-brand-400 text-sm font-medium hover:text-brand-300 transition-colors flex items-center gap-1">
+              See all <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+          <EventsGrid endpoint="/api/events/meta/trending" />
+        </div>
+      </section>
+
+      {/* Upcoming / main */}
+      <section className="py-12 px-6 border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Upcoming events</h2>
               <p className="text-white/40 text-sm mt-1">Discover what&apos;s happening</p>
             </div>
             <Link href="/events" className="text-brand-400 text-sm font-medium hover:text-brand-300 transition-colors flex items-center gap-1">
               See all <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
-          <EventsGrid />
+          <EventsGrid endpoint="/api/events?limit=6" />
         </div>
       </section>
 
