@@ -38,12 +38,43 @@ function MessagesInner() {
     if (active && token) loadThread(active, token);
   }, [active, token]);
 
-  // Light polling so messages feel live.
+  // Ask for notification permission once.
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
+
+  // Light polling so messages feel live + desktop notification on new incoming.
+  const lastSeenRef = useRef<Record<string, string>>({});
   useEffect(() => {
     if (!active || !token) return;
     const i = setInterval(() => loadThread(active, token, true), 5000);
     return () => clearInterval(i);
   }, [active, token]);
+
+  // Poll the inbox for new incoming messages across all conversations → notify.
+  useEffect(() => {
+    if (!token) return;
+    const i = setInterval(async () => {
+      const d = await fetch(`${API_URL}/api/messages`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+      const list = d.data || [];
+      setConvos(list);
+      const totalUnread = list.reduce((s: number, c: any) => s + (c.unread || 0), 0);
+      document.title = totalUnread > 0 ? `(${totalUnread}) Messages · LSPTicketHive` : "Messages · LSPTicketHive";
+      for (const c of list) {
+        const last = c.lastMessage;
+        if (last && last.senderId !== meId && c.unread > 0) {
+          const prev = lastSeenRef.current[c.id];
+          if (prev && prev !== last.id && c.id !== active && "Notification" in window && Notification.permission === "granted") {
+            new Notification(`${c.other?.firstName || "New message"}`, { body: last.body, icon: "/favicon.ico" });
+          }
+          lastSeenRef.current[c.id] = last.id;
+        }
+      }
+    }, 8000);
+    return () => clearInterval(i);
+  }, [token, meId, active]);
 
   async function loadInbox(t: string) {
     const d = await fetch(`${API_URL}/api/messages`, { headers: { Authorization: `Bearer ${t}` } }).then(r => r.json());
@@ -110,14 +141,22 @@ function MessagesInner() {
                     <div className="text-[10px] text-white/30 uppercase">{thread.other?.role === "ORGANIZER" ? "Business" : (thread.other?.role || "")}</div>
                   </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  {thread.messages.map((m: any) => (
-                    <div key={m.id} className={`flex ${m.senderId === meId ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[75%] px-3.5 py-2 rounded-2xl text-sm ${m.senderId === meId ? "bg-brand-500 text-black rounded-br-sm" : "bg-white/10 text-white rounded-bl-sm"}`}>
-                        {m.body}
+                <div className="flex-1 overflow-y-auto p-4 space-y-1.5" style={{ backgroundImage: "radial-gradient(circle at 25% 15%, rgba(34,197,94,0.04), transparent 40%)" }}>
+                  {thread.messages.map((m: any) => {
+                    const mine = m.senderId === meId;
+                    const time = new Date(m.createdAt).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" });
+                    return (
+                      <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                        <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow-sm ${mine ? "bg-brand-500 text-black rounded-br-md" : "bg-[#262626] text-white rounded-bl-md"}`}>
+                          <span className="whitespace-pre-wrap break-words">{m.body}</span>
+                          <span className={`inline-flex items-center gap-0.5 ml-2 align-bottom text-[10px] ${mine ? "text-black/50" : "text-white/30"}`}>
+                            {time}
+                            {mine && <span>{m.readAt ? "✓✓" : "✓"}</span>}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   <div ref={bottomRef} />
                 </div>
                 <div className="p-3 border-t border-white/5 flex gap-2">
