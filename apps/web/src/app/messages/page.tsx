@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Send, MessageCircle, Smile } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, Smile, Users, X } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const EMOJIS = ["😀","😂","🥰","😎","😍","🤝","🙌","👏","🔥","🎉","🎟️","💸","💰","✅","👍","👎","❤️","🙏","💯","⭐","🎵","🕺","💃","🍻","📍","📅","⏰","😅","😢","😡","🤔","👀"];
@@ -25,7 +25,29 @@ function MessagesInner() {
   const [thread, setThread] = useState<any>(null);
   const [body, setBody] = useState("");
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [groupOpen, setGroupOpen] = useState(false);
+  const [groupName, setGroupName] = useState("");
+  const [groupPicks, setGroupPicks] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Candidate members = distinct people from my existing 1-1 conversations.
+  const contacts = convos.filter(c => !c.isGroup && c.other?.id).map(c => c.other);
+
+  function openNewGroup() {
+    setGroupName(""); setGroupPicks([]); setGroupOpen(true);
+  }
+  function togglePick(id: string) {
+    setGroupPicks(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
+  }
+  async function createGroup() {
+    if (!groupName.trim() || groupPicks.length === 0) return;
+    const res = await fetch(`${API_URL}/api/messages/groups`, {
+      method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ name: groupName.trim(), memberIds: groupPicks }),
+    });
+    const d = await res.json();
+    if (d.success) { setGroupOpen(false); await loadInbox(token); openConvo(d.data.conversationId); }
+  }
 
   useEffect(() => {
     const t = localStorage.getItem("token");
@@ -119,7 +141,12 @@ function MessagesInner() {
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
-        <h1 className="text-2xl font-bold text-white mb-5 flex items-center gap-2"><MessageCircle className="w-6 h-6 text-brand-400" /> Messages</h1>
+        <div className="flex items-center justify-between mb-5">
+          <h1 className="text-2xl font-bold text-white flex items-center gap-2"><MessageCircle className="w-6 h-6 text-brand-400" /> Messages</h1>
+          <button onClick={openNewGroup} className="flex items-center gap-2 bg-brand-500 text-black px-4 py-2 rounded-xl text-sm font-semibold hover:bg-brand-400 transition-colors">
+            <Users className="w-4 h-4" /> New Group
+          </button>
+        </div>
         <div className="grid md:grid-cols-3 gap-4 h-[70vh]">
           {/* Inbox */}
           <div className={`md:col-span-1 bg-white/[0.02] border border-white/5 rounded-2xl overflow-y-auto ${active ? "hidden md:block" : ""}`}>
@@ -166,14 +193,20 @@ function MessagesInner() {
                     // Server tags m.mine; fall back to id comparison if absent.
                     const mine = m.mine ?? (m.senderId === meId);
                     const time = new Date(m.createdAt).toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" });
+                    // In groups, show each sender's own avatar/name.
+                    const av = thread.isGroup ? m.sender?.avatarUrl : thread.other?.avatarUrl;
+                    const initial = thread.isGroup ? m.sender?.firstName?.[0] : thread.other?.firstName?.[0];
                     return (
                       <div key={m.id} className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
                         {!mine && (
                           <div className="w-7 h-7 rounded-full bg-brand-500/10 flex items-center justify-center shrink-0 overflow-hidden">
-                            {thread.other?.avatarUrl ? <img src={thread.other.avatarUrl} className="w-full h-full object-cover" alt="" /> : <span className="text-brand-400 text-[11px] font-bold">{thread.other?.firstName?.[0]}</span>}
+                            {av ? <img src={av} className="w-full h-full object-cover" alt="" /> : <span className="text-brand-400 text-[11px] font-bold">{initial}</span>}
                           </div>
                         )}
                         <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow-sm ${mine ? "bg-brand-500 text-black rounded-br-md" : "bg-[#2a3942] text-white rounded-bl-md"}`}>
+                          {thread.isGroup && !mine && m.sender && (
+                            <div className="text-[11px] font-semibold text-brand-400 mb-0.5">{m.sender.firstName} {m.sender.lastName?.[0]}.</div>
+                          )}
                           <span className="whitespace-pre-wrap break-words">{m.body}</span>
                           <span className={`inline-flex items-center gap-0.5 ml-2 align-bottom text-[10px] ${mine ? "text-black/50" : "text-white/40"}`}>
                             {time}
@@ -202,6 +235,36 @@ function MessagesInner() {
           </div>
         </div>
       </div>
+
+      {/* New group modal */}
+      {groupOpen && (
+        <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4" onClick={() => setGroupOpen(false)}>
+          <div className="bg-[#141414] border border-white/10 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-white flex items-center gap-2"><Users className="w-5 h-5 text-brand-400" /> New group</h2>
+              <button onClick={() => setGroupOpen(false)} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>
+            </div>
+            <input value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="Group name" className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-xl text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500 mb-4" />
+            <p className="text-xs text-white/40 mb-2">Add members (people you&apos;ve chatted with)</p>
+            <div className="max-h-52 overflow-y-auto space-y-1 mb-4">
+              {contacts.length === 0 ? (
+                <p className="text-sm text-white/30 py-3 text-center">Start a 1-1 chat first to add people to a group.</p>
+              ) : contacts.map((u: any) => (
+                <button key={u.id} onClick={() => togglePick(u.id)} className={`w-full flex items-center gap-3 p-2 rounded-lg text-left transition-colors ${groupPicks.includes(u.id) ? "bg-brand-500/15 border border-brand-500/30" : "hover:bg-white/5 border border-transparent"}`}>
+                  <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center shrink-0">
+                    {u.avatarUrl ? <img src={u.avatarUrl} className="w-full h-full rounded-full object-cover" alt="" /> : <span className="text-brand-400 text-xs font-bold">{u.firstName?.[0]}</span>}
+                  </div>
+                  <span className="text-sm text-white flex-1">{u.firstName} {u.lastName}</span>
+                  {groupPicks.includes(u.id) && <span className="text-brand-400 text-xs">✓</span>}
+                </button>
+              ))}
+            </div>
+            <button onClick={createGroup} disabled={!groupName.trim() || groupPicks.length === 0} className="w-full bg-brand-500 text-black py-2.5 rounded-xl text-sm font-semibold hover:bg-brand-400 disabled:opacity-40 transition-colors">
+              Create group ({groupPicks.length})
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
