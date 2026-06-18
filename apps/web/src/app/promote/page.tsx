@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Megaphone, TrendingUp, Calendar, MapPin, Share2 } from "lucide-react";
+import { Megaphone, TrendingUp, Calendar, MapPin, Share2, Search } from "lucide-react";
 import PromoteModal from "../components/PromoteModal";
+import { TOP_CATEGORIES } from "../lib/categories";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -20,6 +21,8 @@ export default function PromotePage() {
   const [me, setMe] = useState<any>(null);
   const [promoteEvent, setPromoteEvent] = useState<MEvent | null>(null);
   const [opportunities, setOpportunities] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [cat, setCat] = useState("");
 
   useEffect(() => {
     const u = localStorage.getItem("user");
@@ -89,17 +92,37 @@ export default function PromotePage() {
           </div>
         )}
 
-        <h2 className="text-xl font-bold text-white mb-6">Events open for promotion</h2>
+        <h2 className="text-xl font-bold text-white mb-4">Events open for promotion</h2>
+
+        {/* Search + category filter */}
+        <div className="mb-6 space-y-3">
+          <div className="flex items-center bg-white/5 border border-white/10 rounded-xl px-4 max-w-md">
+            <Search className="w-4 h-4 text-white/30 shrink-0" />
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search events to promote…" className="flex-1 bg-transparent px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:outline-none" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setCat("")} className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${!cat ? "bg-brand-500 text-black border-brand-500 font-medium" : "bg-white/5 text-white/60 border-white/10 hover:border-white/30"}`}>All</button>
+            {TOP_CATEGORIES.map(c => (
+              <button key={c} onClick={() => setCat(c === cat ? "" : c)} className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${cat === c ? "bg-brand-500 text-black border-brand-500 font-medium" : "bg-white/5 text-white/60 border-white/10 hover:border-white/30"}`}>{c}</button>
+            ))}
+          </div>
+        </div>
         {loading ? (
           <div className="text-center py-16 text-white/30">Loading...</div>
-        ) : events.length === 0 ? (
-          <div className="text-center py-16">
-            <Megaphone className="w-10 h-10 text-white/20 mx-auto mb-3" />
-            <p className="text-white/40">No events open for promotion yet. Check back soon!</p>
-          </div>
-        ) : (
+        ) : (() => {
+          const filtered = events.filter(e =>
+            (!search || e.title.toLowerCase().includes(search.toLowerCase()) || (e.organization?.name || "").toLowerCase().includes(search.toLowerCase())) &&
+            (!cat || e.category === cat)
+          );
+          if (filtered.length === 0) return (
+            <div className="text-center py-16">
+              <Megaphone className="w-10 h-10 text-white/20 mx-auto mb-3" />
+              <p className="text-white/40">{events.length === 0 ? "No events open for promotion yet. Check back soon!" : "No events match your search."}</p>
+            </div>
+          );
+          return (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {events.map((e, i) => (
+            {filtered.map((e, i) => (
               <motion.div key={e.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i * 0.05, 0.4) }}
                 className="bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden hover:border-brand-500/30 transition-colors">
                 <Link href={`/events/${e.id}`}>
@@ -125,7 +148,8 @@ export default function PromotePage() {
               </motion.div>
             ))}
           </div>
-        )}
+          );
+        })()}
       </div>
 
       <PromoteModal

@@ -53,6 +53,7 @@ function VerifyContent() {
 
     if (data.success) {
       localStorage.setItem("user", JSON.stringify(data.data.user));
+      window.dispatchEvent(new Event("auth-change"));
       localStorage.setItem("token", data.data.token);
       router.push("/events");
     } else {

@@ -57,6 +57,7 @@ export default function LoginPage() {
 
       localStorage.setItem("token", data.data.token);
       localStorage.setItem("user", JSON.stringify(data.data.user));
+      window.dispatchEvent(new Event("auth-change"));
 
       if (data.data.user.role === "ORGANIZER") {
         router.push("/dashboard");

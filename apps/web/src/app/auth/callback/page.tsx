@@ -14,6 +14,7 @@ function CallbackHandler() {
       try {
         const user = JSON.parse(decodeURIComponent(userParam));
         localStorage.setItem("user", JSON.stringify(user));
+        window.dispatchEvent(new Event("auth-change"));
         if (tokenParam) localStorage.setItem("token", tokenParam);
         router.push(user.role === "ORGANIZER" ? "/dashboard" : "/events");
       } catch {

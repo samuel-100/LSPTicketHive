@@ -17,10 +17,21 @@ export default function Navbar() {
   const [suggestions, setSuggestions] = useState<{ name: string; label: string }[]>([]);
   const [searchingCity, setSearchingCity] = useState(false);
 
+  // Re-read the logged-in user on mount, on every route change (so it updates
+  // right after login/signup navigation), and on auth events from other tabs.
   useEffect(() => {
-    const stored = localStorage.getItem("user");
-    if (stored) setUser(JSON.parse(stored));
-  }, []);
+    function syncUser() {
+      const stored = localStorage.getItem("user");
+      setUser(stored ? JSON.parse(stored) : null);
+    }
+    syncUser();
+    window.addEventListener("storage", syncUser);
+    window.addEventListener("auth-change", syncUser);
+    return () => {
+      window.removeEventListener("storage", syncUser);
+      window.removeEventListener("auth-change", syncUser);
+    };
+  }, [pathname]);
 
   // Worldwide place autocomplete via Photon (OpenStreetMap, no API key needed).
   useEffect(() => {
@@ -92,6 +103,7 @@ export default function Navbar() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
+    window.dispatchEvent(new Event("auth-change"));
     window.location.href = "/";
   }
 
