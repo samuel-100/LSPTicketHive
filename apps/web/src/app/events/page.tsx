@@ -29,6 +29,8 @@ function EventsContent() {
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [city, setCity] = useState(searchParams.get("city") || "");
   const [category, setCategory] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
+  const [priceFilter, setPriceFilter] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -80,6 +82,41 @@ function EventsContent() {
     return null;
   };
 
+  // Client-side date + price filtering on top of the server's city/category/search.
+  function inDateRange(iso: string): boolean {
+    if (!dateFilter) return true;
+    const d = new Date(iso);
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dayMs = 86400000;
+    if (dateFilter === "today") {
+      return d >= startOfDay && d < new Date(startOfDay.getTime() + dayMs);
+    }
+    if (dateFilter === "tomorrow") {
+      const t = new Date(startOfDay.getTime() + dayMs);
+      return d >= t && d < new Date(t.getTime() + dayMs);
+    }
+    if (dateFilter === "weekend") {
+      // Upcoming Sat 00:00 → Mon 00:00
+      const day = startOfDay.getDay(); // 0 Sun..6 Sat
+      const daysUntilSat = (6 - day + 7) % 7;
+      const sat = new Date(startOfDay.getTime() + daysUntilSat * dayMs);
+      return d >= sat && d < new Date(sat.getTime() + 2 * dayMs);
+    }
+    if (dateFilter === "month") {
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    }
+    return true;
+  }
+
+  function matchesPrice(event: Event): boolean {
+    if (!priceFilter) return true;
+    const min = Math.min(...event.ticketTypes.map(t => t.price));
+    return priceFilter === "free" ? min === 0 : min > 0;
+  }
+
+  const visibleEvents = events.filter(e => inDateRange(e.startDate) && matchesPrice(e));
+
   const categories = ["Music", "Nightlife", "Food & Drink", "Tech", "Comedy", "Arts", "Sports", "Business"];
 
   return (
@@ -117,20 +154,34 @@ function EventsContent() {
               {/* Date */}
               <div>
                 <h3 className="text-sm font-semibold text-white mb-3">Date</h3>
-                <ul className="space-y-2 text-sm text-white/40">
-                  <li><button className="hover:text-white/60">Today</button></li>
-                  <li><button className="hover:text-white/60">Tomorrow</button></li>
-                  <li><button className="hover:text-white/60">This weekend</button></li>
-                  <li><button className="hover:text-white/60">This month</button></li>
+                <ul className="space-y-2 text-sm">
+                  {[["today", "Today"], ["tomorrow", "Tomorrow"], ["weekend", "This weekend"], ["month", "This month"]].map(([val, label]) => (
+                    <li key={val}>
+                      <button
+                        onClick={() => setDateFilter(dateFilter === val ? "" : val)}
+                        className={`transition-colors ${dateFilter === val ? "text-brand-400 font-medium" : "text-white/40 hover:text-white/60"}`}
+                      >
+                        {label}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               </div>
 
               {/* Price */}
               <div>
                 <h3 className="text-sm font-semibold text-white mb-3">Price</h3>
-                <ul className="space-y-2 text-sm text-white/40">
-                  <li><button className="hover:text-white/60">Free</button></li>
-                  <li><button className="hover:text-white/60">Paid</button></li>
+                <ul className="space-y-2 text-sm">
+                  {[["free", "Free"], ["paid", "Paid"]].map(([val, label]) => (
+                    <li key={val}>
+                      <button
+                        onClick={() => setPriceFilter(priceFilter === val ? "" : val)}
+                        className={`transition-colors ${priceFilter === val ? "text-brand-400 font-medium" : "text-white/40 hover:text-white/60"}`}
+                      >
+                        {label}
+                      </button>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
@@ -140,17 +191,17 @@ function EventsContent() {
           <div className="flex-1">
             {loading ? (
               <div className="text-center py-16 text-white/30">Loading events...</div>
-            ) : events.length === 0 ? (
+            ) : visibleEvents.length === 0 ? (
               <div className="text-center py-16">
                 <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Calendar className="w-8 h-8 text-white/20" />
                 </div>
                 <h3 className="text-lg font-medium text-white/60 mb-2">No events found</h3>
-                <p className="text-white/30 mb-6">Try a different search or location</p>
+                <p className="text-white/30 mb-6">Try a different search, date, or location</p>
               </div>
             ) : (
               <div className="space-y-4">
-                {events.map(event => {
+                {visibleEvents.map(event => {
                   const status = getStatus(event);
                   return (
                     <Link key={event.id} href={`/events/${event.id}`} className="group flex gap-4 bg-white/[0.02] border border-white/5 rounded-xl p-4 hover:border-brand-500/20 transition-all">
@@ -189,7 +240,7 @@ function EventsContent() {
           {/* Map */}
           <aside className="lg:w-[45%] shrink-0">
             <div className="sticky top-16 h-64 lg:h-[calc(100vh-70px)] rounded-xl overflow-hidden border border-white/5 mb-6 lg:mb-0">
-              <EventMap events={events.map(e => ({ id: e.id, title: e.title, venue: e.venue, city: e.city }))} city={city} />
+              <EventMap events={visibleEvents.map(e => ({ id: e.id, title: e.title, venue: e.venue, city: e.city }))} city={city} />
             </div>
           </aside>
         </div>

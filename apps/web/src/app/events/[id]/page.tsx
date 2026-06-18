@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Calendar, MapPin, Clock, Users, Minus, Plus, Ticket, ArrowLeft, CalendarPlus } from "lucide-react";
+import { Calendar, MapPin, Clock, Users, Minus, Plus, Ticket, ArrowLeft, CalendarPlus, Share2 } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -141,6 +141,21 @@ export default function EventDetailPage() {
     return `https://calendar.google.com/calendar/render?${params.toString()}`;
   }
 
+  const [shareLabel, setShareLabel] = useState("Share");
+  async function shareEvent() {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const shareData = { title: event?.title || "Event", text: `Check out ${event?.title} on LSPTicketHive`, url };
+    // Native share sheet on mobile; clipboard fallback on desktop.
+    if (typeof navigator !== "undefined" && (navigator as any).share) {
+      try { await (navigator as any).share(shareData); return; } catch { /* user cancelled */ }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareLabel("Link copied!");
+      setTimeout(() => setShareLabel("Share"), 2000);
+    } catch { /* ignore */ }
+  }
+
   function downloadIcs() {
     if (!event) return;
     const loc = [event.venue, event.city, event.country].filter(Boolean).join(", ");
@@ -274,6 +289,13 @@ export default function EventDetailPage() {
             >
               <Calendar className="w-4 h-4 text-brand-400" />
               Apple / Outlook (.ics)
+            </button>
+            <button
+              onClick={shareEvent}
+              className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-lg text-sm font-medium text-white hover:border-brand-500/40 transition-colors"
+            >
+              <Share2 className="w-4 h-4 text-brand-400" />
+              {shareLabel}
             </button>
           </div>
           </div>
