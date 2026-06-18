@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Calendar, MapPin, Clock, Users, Minus, Plus, Ticket, ArrowLeft, CalendarPlus, Share2, Heart, Star, ThumbsUp, MessageCircle } from "lucide-react";
+import { motion } from "framer-motion";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -370,15 +371,29 @@ export default function EventDetailPage() {
       </header>
 
       <div className="max-w-5xl mx-auto px-6 py-10">
-        {/* Event Hero */}
-        <div className="bg-gradient-to-br from-brand-500/20 to-brand-700/5 border border-brand-500/20 rounded-2xl p-8 md:p-12 mb-8 relative overflow-hidden">
-          {event.coverImageUrl && (
-            <img src={event.coverImageUrl} alt={event.title} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+        {/* Event Hero — cinematic full-bleed cover */}
+        <div className="relative rounded-3xl overflow-hidden mb-8 min-h-[340px] md:min-h-[420px] flex items-end">
+          {event.coverImageUrl ? (
+            <>
+              <img src={event.coverImageUrl} alt={event.title} className="absolute inset-0 w-full h-full object-cover scale-105" />
+              {/* blurred color glow from the image */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/20" />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent" />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-500/30 to-brand-700/10" />
           )}
-          <div className="relative z-10">
-          <div className="text-brand-400 text-sm font-medium mb-3 uppercase tracking-wider">{event.category}</div>
-          <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">{event.title}</h1>
-          {event.shortDesc && <p className="text-white/50 text-lg mb-6">{event.shortDesc}</p>}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="relative z-10 p-6 md:p-12 w-full"
+          >
+          {event.category && (
+            <div className="inline-block bg-brand-500/90 text-black text-xs font-bold mb-4 uppercase tracking-wider px-3 py-1 rounded-full">{event.category}</div>
+          )}
+          <h1 className="text-3xl md:text-6xl font-bold text-white mb-4 max-w-3xl leading-tight drop-shadow-lg">{event.title}</h1>
+          {event.shortDesc && <p className="text-white/70 text-lg mb-6 max-w-2xl">{event.shortDesc}</p>}
           <div className="flex flex-wrap gap-6 text-sm text-white/60">
             <span className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-brand-400" />
@@ -440,7 +455,7 @@ export default function EventDetailPage() {
               {likeCount > 0 ? likeCount : ""} {liked ? "Liked" : "Like"}
             </button>
           </div>
-          </div>
+          </motion.div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">

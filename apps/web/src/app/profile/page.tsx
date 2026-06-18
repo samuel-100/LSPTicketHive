@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Camera, Mail, MapPin, Save, Ticket, Heart, Users, BadgeCheck, Rocket } from "lucide-react";
 import PhoneInput from "../components/PhoneInput";
+import CitySearch from "../components/CitySearch";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -209,10 +210,7 @@ export default function ProfilePage() {
                 <PhoneInput value={phone} onChange={setPhone} />
               </Field>
               <Field label="City">
-                <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl focus-within:border-brand-500 transition-colors">
-                  <MapPin className="w-4 h-4 text-brand-400 shrink-0" />
-                  <input value={city} onChange={e => setCity(e.target.value)} placeholder="Your city" className="bg-transparent text-white placeholder:text-white/20 focus:outline-none w-full text-sm" />
-                </div>
+                <CitySearch value={city} onChange={setCity} placeholder="Search your city…" />
               </Field>
             </div>
             <button onClick={handleSave} disabled={saving} className="w-full flex items-center justify-center gap-2 bg-brand-500 text-black py-3.5 rounded-xl font-semibold hover:bg-brand-400 disabled:opacity-50 transition-colors">
