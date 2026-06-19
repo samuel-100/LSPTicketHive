@@ -36,8 +36,13 @@ function MessagesInner() {
   // Track the visual viewport so the chat pins to the keyboard on mobile.
   // iOS Safari does NOT shrink 100dvh when the keyboard opens, so we measure
   // window.visualViewport.height directly and apply it as the chat height.
-  const [vvHeight, setVvHeight] = useState<number | null>(null);
-  const [vvTop, setVvTop] = useState(0);
+  // Pin the chat to the EXACT visual-viewport rectangle (Instagram-style).
+  // On iOS a position:fixed element is anchored to the LAYOUT viewport, so when
+  // the keyboard opens it doesn't follow the shrunken visible area. We instead
+  // set the chat's top/left/width/height to window.visualViewport's rect, so it
+  // always exactly fills what the user can see — composer flush on the keyboard,
+  // no gap, no jump.
+  const [vvRect, setVvRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -45,20 +50,24 @@ function MessagesInner() {
     onMq();
     mq.addEventListener("change", onMq);
     const vv = window.visualViewport;
-    // Track BOTH the visible height and the visible-viewport offsetTop. On iOS,
-    // a position:fixed element is anchored to the LAYOUT viewport, so when the
-    // keyboard opens the visual viewport shifts down — we translate the chat by
-    // offsetTop so its bottom sits right on the keyboard (no gap).
-    // We only react on 'resize' (keyboard open/close), NOT 'scroll' — that fires
-    // on every Safari toolbar move and caused the shaking feedback loop.
-    const apply = () => { if (vv) { setVvHeight(vv.height); setVvTop(vv.offsetTop); } };
+    let raf = 0;
+    const apply = () => {
+      if (!vv) return;
+      // Coalesce bursts of events into one update per frame (kills the shake).
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        setVvRect({ top: vv.offsetTop, left: vv.offsetLeft, width: vv.width, height: vv.height });
+      });
+    };
     if (vv) {
       apply();
       vv.addEventListener("resize", apply);
+      vv.addEventListener("scroll", apply);
     }
     return () => {
+      cancelAnimationFrame(raf);
       mq.removeEventListener("change", onMq);
-      if (vv) vv.removeEventListener("resize", apply);
+      if (vv) { vv.removeEventListener("resize", apply); vv.removeEventListener("scroll", apply); }
     };
   }, []);
   // While a chat is open on mobile: lock background scroll AND hide the global
@@ -261,8 +270,8 @@ function MessagesInner() {
             the keyboard slides up, the chat shrinks and the composer stays
             pinned directly above the keyboard (iOS-safe, unlike 100dvh). */}
         <div
-          className={`grid grid-rows-1 md:grid-cols-3 gap-4 md:h-[72vh] md:static md:z-auto md:!transform-none ${active ? "fixed top-0 left-0 right-0 z-[60] bg-[#0a0a0a]" : "h-[72vh]"}`}
-          style={active && isMobile && vvHeight ? { height: `${vvHeight}px`, transform: `translateY(${vvTop}px)` } : undefined}
+          className={`grid grid-rows-1 md:grid-cols-3 gap-4 md:h-[72vh] md:!static md:z-auto ${active ? "fixed z-[60] bg-[#0a0a0a]" : "h-[72vh]"}`}
+          style={active && isMobile && vvRect ? { position: "fixed", top: vvRect.top, left: vvRect.left, width: vvRect.width, height: vvRect.height } : undefined}
         >
           {/* Inbox */}
           <div className={`md:col-span-1 bg-white/[0.02] border border-white/5 rounded-2xl overflow-y-auto ${active ? "hidden md:block" : ""}`}>
