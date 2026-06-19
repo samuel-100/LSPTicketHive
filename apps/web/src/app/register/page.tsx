@@ -212,7 +212,7 @@ function RegisterForm() {
               <div className="bg-white/[0.02] border border-white/10 rounded-xl p-4">
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
-                    <div className="text-sm font-medium text-white">I also want to promote events & earn 💸</div>
+                    <div className="text-sm font-medium text-white">I also want to promote events & earn</div>
                     <div className="text-xs text-white/40">Share events and earn commission on tickets you sell.</div>
                   </div>
                   <button

@@ -24,7 +24,7 @@ function OrderContent() {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refunding, setRefunding] = useState(false);
-  const [shareLabel, setShareLabel] = useState("Share — I'm going! 🎉");
+  const [shareLabel, setShareLabel] = useState("Share — I'm going!");
   const [transferFor, setTransferFor] = useState<string | null>(null);
   const [transferEmail, setTransferEmail] = useState("");
   const [transferMsg, setTransferMsg] = useState("");
@@ -56,7 +56,7 @@ function OrderContent() {
     try {
       await navigator.clipboard.writeText(`I'm going to ${order?.event.title}! ${url}`);
       setShareLabel("Copied!");
-      setTimeout(() => setShareLabel("Share — I'm going! 🎉"), 2000);
+      setTimeout(() => setShareLabel("Share — I'm going!"), 2000);
     } catch { /* ignore */ }
   }
 

@@ -40,7 +40,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">🔥 Trending now</h2>
+              <h2 className="text-2xl font-bold text-white">Trending now</h2>
               <p className="text-white/40 text-sm mt-1">The hottest events selling fast</p>
             </div>
             <Link href="/events?sort=popular" className="text-brand-400 text-sm font-medium hover:text-brand-300 transition-colors flex items-center gap-1">

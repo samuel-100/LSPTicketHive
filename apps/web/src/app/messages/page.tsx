@@ -350,7 +350,7 @@ function MessagesInner() {
                     <span className="text-sm font-medium text-white truncate">{c.other?.firstName} {c.other?.lastName?.[0]}.</span>
                     {c.unread > 0 && <span className="bg-brand-500 text-black text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center">{c.unread}</span>}
                   </div>
-                  <p className="text-xs text-white/40 truncate">{c.lastMessage?.audioUrl ? "🎤 Voice message" : c.lastMessage?.imageUrl && !c.lastMessage?.body ? "📷 Photo" : c.lastMessage?.body || "New conversation"}</p>
+                  <p className="text-xs text-white/40 truncate">{c.lastMessage?.audioUrl ? "Voice message" : c.lastMessage?.imageUrl && !c.lastMessage?.body ? "Photo" : c.lastMessage?.body || "New conversation"}</p>
                 </div>
               </button>
             ))}

@@ -98,7 +98,7 @@ export default function DashboardPage() {
         {/* Welcome */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-white mb-1">
-            Welcome back{user ? `, ${user.firstName}` : ""} 👋
+            Welcome back{user ? `, ${user.firstName}` : ""}
           </h1>
           <p className="text-white/40">Here&apos;s your event overview</p>
         </div>

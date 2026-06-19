@@ -507,7 +507,7 @@ function EventDetailInner() {
                 onClick={promoteEvent}
                 className="flex items-center gap-2 bg-brand-500/15 border border-brand-500/30 text-brand-400 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-brand-500/25 transition-colors"
               >
-                💸 Promote & Earn ({event.commissionRate || 0}%)
+                Promote & Earn ({event.commissionRate || 0}%)
               </button>
             )}
           </div>
