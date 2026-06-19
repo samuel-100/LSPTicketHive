@@ -292,7 +292,7 @@ function MessagesInner() {
               <div className="flex-1 flex items-center justify-center text-red-400 text-sm">{thread.error}</div>
             ) : (
               <>
-                <div className="flex items-center gap-3 p-3 border-b border-white/5" style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}>
+                <div className="shrink-0 flex items-center gap-3 p-3 border-b border-white/5" style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}>
                   {/* Instagram-style circular back button (mobile full-screen chat) */}
                   <button onClick={closeConvo} className="md:hidden w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 active:scale-90 transition-transform"><ArrowLeft className="w-5 h-5" /></button>
                   <button onClick={() => thread.isGroup && openMembers()} className={`flex items-center gap-3 flex-1 min-w-0 text-left ${thread.isGroup ? "hover:opacity-80" : "cursor-default"}`}>
@@ -308,7 +308,7 @@ function MessagesInner() {
                   <button onClick={() => alert('Voice calls are coming soon!')} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0"><Phone className="w-[18px] h-[18px]" /></button>
                   <button onClick={() => alert('Video calls are coming soon!')} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0"><Video className="w-[18px] h-[18px]" /></button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-4 space-y-1.5" style={{ backgroundImage: "radial-gradient(circle at 25% 15%, rgba(34,197,94,0.04), transparent 40%)" }}>
+                <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1.5" style={{ backgroundImage: "radial-gradient(circle at 25% 15%, rgba(34,197,94,0.04), transparent 40%)" }}>
                   {thread.messages.map((m: any) => {
                     // Server tags m.mine; fall back to id comparison if absent.
                     const mine = m.mine ?? (m.senderId === meId);
@@ -343,7 +343,7 @@ function MessagesInner() {
                   })}
                   <div ref={bottomRef} />
                 </div>
-                <div className="p-3 border-t border-white/5 flex items-center gap-2 relative" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
+                <div className="shrink-0 p-3 border-t border-white/5 flex items-center gap-2 relative" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
                   {emojiOpen && (
                     <div className="absolute bottom-16 left-3 bg-[#1a1a1a] border border-white/10 rounded-xl p-2 grid grid-cols-8 gap-1 shadow-2xl z-20 w-72">
                       {EMOJIS.map(e => (
