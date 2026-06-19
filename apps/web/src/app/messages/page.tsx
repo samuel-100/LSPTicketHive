@@ -44,19 +44,25 @@ function MessagesInner() {
     onMq();
     mq.addEventListener("change", onMq);
     const vv = window.visualViewport;
+    // Only react to MEANINGFUL height changes (the keyboard, ~150px+). Ignore
+    // the tiny jitter from Safari's address bar collapsing on scroll — that
+    // jitter + a scrollIntoView call was causing the shaking feedback loop.
+    let last = vv ? vv.height : 0;
     const onResize = () => {
-      if (vv) setVvHeight(vv.height);
-      // Keep the latest message in view as the keyboard opens/closes.
-      setTimeout(() => bottomRef.current?.scrollIntoView({ block: "end" }), 0);
+      if (!vv) return;
+      if (Math.abs(vv.height - last) < 60) return; // ignore toolbar jitter
+      last = vv.height;
+      setVvHeight(vv.height);
     };
     if (vv) {
-      onResize();
+      last = vv.height;
+      setVvHeight(vv.height);
       vv.addEventListener("resize", onResize);
-      vv.addEventListener("scroll", onResize);
+      // NOTE: do NOT listen to vv 'scroll' — that fires on every toolbar move.
     }
     return () => {
       mq.removeEventListener("change", onMq);
-      if (vv) { vv.removeEventListener("resize", onResize); vv.removeEventListener("scroll", onResize); }
+      if (vv) vv.removeEventListener("resize", onResize);
     };
   }, []);
   // While a chat is open on mobile: lock background scroll AND hide the global
