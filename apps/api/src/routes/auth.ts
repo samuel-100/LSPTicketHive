@@ -257,7 +257,7 @@ authRouter.get("/me", authenticate, async (req: AuthRequest, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user!.userId },
     select: { id: true, email: true, firstName: true, lastName: true, role: true, avatarUrl: true, phone: true, emailVerified: true, createdAt: true,
-      isPromoter: true, promoterInterests: true, promoterBio: true,
+      isPromoter: true, promoterInterests: true, promoterBio: true, addresses: true,
       _count: { select: { orders: true, tickets: true, following: true } } },
   });
   res.json({ success: true, data: user });
@@ -265,7 +265,7 @@ authRouter.get("/me", authenticate, async (req: AuthRequest, res) => {
 
 // Update profile. Email/role not editable. Promoter opt-in only for attendees.
 authRouter.patch("/me", authenticate, async (req: AuthRequest, res) => {
-  const { firstName, lastName, avatarUrl, phone, isPromoter, promoterInterests, promoterBio } = req.body;
+  const { firstName, lastName, avatarUrl, phone, isPromoter, promoterInterests, promoterBio, addresses } = req.body;
   const me = await prisma.user.findUnique({ where: { id: req.user!.userId } });
   const canPromote = me?.role === "ATTENDEE";
   const user = await prisma.user.update({
@@ -275,11 +275,12 @@ authRouter.patch("/me", authenticate, async (req: AuthRequest, res) => {
       ...(lastName !== undefined && { lastName }),
       ...(avatarUrl !== undefined && { avatarUrl }),
       ...(phone !== undefined && { phone }),
+      ...(addresses !== undefined && { addresses }),
       ...(canPromote && isPromoter !== undefined && { isPromoter: !!isPromoter }),
       ...(canPromote && promoterInterests !== undefined && { promoterInterests }),
       ...(canPromote && promoterBio !== undefined && { promoterBio }),
     },
-    select: { id: true, email: true, firstName: true, lastName: true, role: true, avatarUrl: true, phone: true, isPromoter: true, promoterInterests: true, promoterBio: true },
+    select: { id: true, email: true, firstName: true, lastName: true, role: true, avatarUrl: true, phone: true, isPromoter: true, promoterInterests: true, promoterBio: true, addresses: true },
   });
   res.json({ success: true, data: user });
 });

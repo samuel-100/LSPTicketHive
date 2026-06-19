@@ -60,6 +60,7 @@ model User {
   isPromoter    Boolean   @default(false)
   promoterInterests String[]  @default([])
   promoterBio   String?
+  addresses     Json?     // { home, billing, shipping, work } each {address,address2,city,country,county}
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

@@ -23,6 +23,11 @@ export default function ProfilePage() {
   const [saved, setSaved] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [acctOpen, setAcctOpen] = useState(false);
+  const emptyAddr = { address: "", address2: "", city: "", country: "Ireland", county: "" };
+  const [addresses, setAddresses] = useState<any>({ home: { ...emptyAddr }, billing: { ...emptyAddr }, shipping: { ...emptyAddr }, work: { ...emptyAddr } });
+  const [savingAddr, setSavingAddr] = useState(false);
+  const [savedAddr, setSavedAddr] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -37,6 +42,14 @@ export default function ProfilePage() {
           setPhone(data.data.phone || "");
           setAvatarUrl(data.data.avatarUrl || "");
           setCity(localStorage.getItem("profile_city") || "");
+          if (data.data.addresses) {
+            setAddresses((prev: any) => ({
+              home: { ...prev.home, ...(data.data.addresses.home || {}) },
+              billing: { ...prev.billing, ...(data.data.addresses.billing || {}) },
+              shipping: { ...prev.shipping, ...(data.data.addresses.shipping || {}) },
+              work: { ...prev.work, ...(data.data.addresses.work || {}) },
+            }));
+          }
         }
       });
   }, [router]);
@@ -81,6 +94,23 @@ export default function ProfilePage() {
       setTimeout(() => setSaved(false), 3000);
     }
     setSaving(false);
+  }
+
+  function setAddr(kind: string, field: string, value: string) {
+    setAddresses((p: any) => ({ ...p, [kind]: { ...p[kind], [field]: value } }));
+  }
+  async function saveAddresses() {
+    setSavingAddr(true);
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API_URL}/api/auth/me`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      credentials: "include",
+      body: JSON.stringify({ addresses }),
+    });
+    const data = await res.json();
+    if (data.success) { setSavedAddr(true); setTimeout(() => setSavedAddr(false), 3000); }
+    setSavingAddr(false);
   }
 
   async function upgradeToBusiness() {
@@ -186,6 +216,44 @@ export default function ProfilePage() {
           <Row icon={<MessageCircle className="w-5 h-5" />} label="Messages" href="/messages" last />
         </Group>
 
+        {/* Account settings — addresses (Eventbrite-style) */}
+        <SectionLabel>Account settings</SectionLabel>
+        <Group>
+          <Row icon={<MapPin className="w-5 h-5" />} label="Addresses" onClick={() => setAcctOpen(o => !o)} last />
+          {acctOpen && (
+            <div className="px-4 py-4 border-t border-white/5 space-y-6 bg-white/[0.01]">
+              {([["home", "Home Address"], ["billing", "Billing Address"], ["shipping", "Shipping Address"], ["work", "Work Address"]] as const).map(([kind, title]) => (
+                <div key={kind} className="space-y-3">
+                  <h4 className="text-white font-bold text-base">{title}</h4>
+                  <Field label="Address"><input value={addresses[kind].address} onChange={e => setAddr(kind, "address", e.target.value)} className={inputCls} /></Field>
+                  <Field label="Address 2"><input value={addresses[kind].address2} onChange={e => setAddr(kind, "address2", e.target.value)} className={inputCls} /></Field>
+                  <Field label="Town/City"><input value={addresses[kind].city} onChange={e => setAddr(kind, "city", e.target.value)} className={inputCls} /></Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Country">
+                      <select value={addresses[kind].country} onChange={e => setAddr(kind, "country", e.target.value)} className={inputCls}>
+                        {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </Field>
+                    <Field label="County">
+                      {addresses[kind].country === "Ireland" ? (
+                        <select value={addresses[kind].county} onChange={e => setAddr(kind, "county", e.target.value)} className={inputCls}>
+                          <option value="">Select a County</option>
+                          {IE_COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      ) : (
+                        <input value={addresses[kind].county} onChange={e => setAddr(kind, "county", e.target.value)} placeholder="County / State" className={inputCls} />
+                      )}
+                    </Field>
+                  </div>
+                </div>
+              ))}
+              <button onClick={saveAddresses} disabled={savingAddr} className="w-full flex items-center justify-center gap-2 bg-brand-500 text-black py-3 rounded-xl font-semibold hover:bg-brand-400 disabled:opacity-50 transition-colors">
+                <Save className="w-4 h-4" />{savedAddr ? "Saved!" : savingAddr ? "Saving…" : "Save"}
+              </button>
+            </div>
+          )}
+        </Group>
+
         {/* Help */}
         <SectionLabel>Help</SectionLabel>
         <Group>
@@ -209,6 +277,9 @@ export default function ProfilePage() {
 }
 
 const inputCls = "w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-brand-500 transition-colors";
+
+const IE_COUNTIES = ["Antrim", "Armagh", "Carlow", "Cavan", "Clare", "Cork", "Derry", "Donegal", "Down", "Dublin", "Fermanagh", "Galway", "Kerry", "Kildare", "Kilkenny", "Laois", "Leitrim", "Limerick", "Longford", "Louth", "Mayo", "Meath", "Monaghan", "Offaly", "Roscommon", "Sligo", "Tipperary", "Tyrone", "Waterford", "Westmeath", "Wexford", "Wicklow"];
+const COUNTRIES = ["Ireland", "United Kingdom", "United States", "Canada", "Australia", "Germany", "France", "Spain", "Italy", "Netherlands", "Belgium", "Nigeria", "Ghana", "South Africa", "Kenya", "India", "Other"];
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
