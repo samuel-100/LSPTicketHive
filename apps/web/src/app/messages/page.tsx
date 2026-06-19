@@ -242,7 +242,7 @@ function MessagesInner() {
             the keyboard slides up, the chat shrinks and the composer stays
             pinned directly above the keyboard (iOS-safe, unlike 100dvh). */}
         <div
-          className={`grid md:grid-cols-3 gap-4 md:h-[72vh] md:static md:z-auto ${active ? "fixed top-0 left-0 right-0 z-[60] bg-[#0a0a0a]" : "h-[72vh]"}`}
+          className={`grid grid-rows-1 md:grid-cols-3 gap-4 md:h-[72vh] md:static md:z-auto ${active ? "fixed top-0 left-0 right-0 z-[60] bg-[#0a0a0a]" : "h-[72vh]"}`}
           style={active && isMobile && vvHeight ? { height: `${vvHeight}px` } : undefined}
         >
           {/* Inbox */}
