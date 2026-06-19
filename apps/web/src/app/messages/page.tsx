@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Send, MessageCircle, Smile, Users, X } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, Smile, Users, X, Phone, Video, Camera, Image as ImageIcon, Mic } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const EMOJIS = ["😀","😂","🥰","😎","😍","🤝","🙌","👏","🔥","🎉","🎟️","💸","💰","✅","👍","👎","❤️","🙏","💯","⭐","🎵","🕺","💃","🍻","📍","📅","⏰","😅","😢","😡","🤔","👀"];
@@ -199,17 +199,20 @@ function MessagesInner() {
               <div className="flex-1 flex items-center justify-center text-red-400 text-sm">{thread.error}</div>
             ) : (
               <>
-                <div className="flex items-center gap-3 p-4 border-b border-white/5">
-                  <button onClick={() => setActive(null)} className="md:hidden text-white/40"><ArrowLeft className="w-5 h-5" /></button>
-                  <button onClick={() => thread.isGroup && openMembers()} className={`flex items-center gap-3 flex-1 text-left ${thread.isGroup ? "hover:opacity-80" : "cursor-default"}`}>
-                    <div className="w-9 h-9 rounded-full bg-brand-500/10 flex items-center justify-center">
-                      {thread.isGroup ? <Users className="w-4 h-4 text-brand-400" /> : (thread.other?.avatarUrl ? <img src={thread.other.avatarUrl} className="w-full h-full rounded-full object-cover" alt="" /> : <span className="text-brand-400 font-bold text-sm">{thread.other?.firstName?.[0]}</span>)}
+                <div className="flex items-center gap-3 p-3 border-b border-white/5">
+                  <button onClick={() => setActive(null)} className="md:hidden text-white/60 shrink-0"><ArrowLeft className="w-6 h-6" /></button>
+                  <button onClick={() => thread.isGroup && openMembers()} className={`flex items-center gap-3 flex-1 min-w-0 text-left ${thread.isGroup ? "hover:opacity-80" : "cursor-default"}`}>
+                    <div className="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center shrink-0 ring-2 ring-brand-500/20">
+                      {thread.isGroup ? <Users className="w-5 h-5 text-brand-400" /> : (thread.other?.avatarUrl ? <img src={thread.other.avatarUrl} className="w-full h-full rounded-full object-cover" alt="" /> : <span className="text-brand-400 font-bold">{thread.other?.firstName?.[0]}</span>)}
                     </div>
-                    <div>
-                      <div className="text-sm font-medium text-white">{thread.other?.firstName} {thread.other?.lastName}</div>
-                      <div className="text-[10px] text-white/30 uppercase">{thread.isGroup ? `${thread.other?.memberCount || 0} members · tap to manage` : (thread.other?.role === "ORGANIZER" ? "Business" : (thread.other?.role || ""))}</div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-white truncate">{thread.other?.firstName} {thread.other?.lastName}</div>
+                      <div className="text-xs text-white/40 truncate">{thread.isGroup ? `${thread.other?.memberCount || 0} members · tap to manage` : (thread.other?.role === "ORGANIZER" ? "Business" : "Active now")}</div>
                     </div>
                   </button>
+                  {/* Call / video (placeholder actions) */}
+                  <button onClick={() => alert('Voice calls are coming soon!')} className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors shrink-0"><Phone className="w-5 h-5" /></button>
+                  <button onClick={() => alert('Video calls are coming soon!')} className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors shrink-0"><Video className="w-5 h-5" /></button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-1.5" style={{ backgroundImage: "radial-gradient(circle at 25% 15%, rgba(34,197,94,0.04), transparent 40%)" }}>
                   {thread.messages.map((m: any) => {
@@ -249,9 +252,19 @@ function MessagesInner() {
                       ))}
                     </div>
                   )}
-                  <button type="button" onClick={() => setEmojiOpen(o => !o)} className="text-white/40 hover:text-brand-400 transition-colors shrink-0"><Smile className="w-5 h-5" /></button>
-                  <input value={body} onChange={e => setBody(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { setEmojiOpen(false); send(); } }} placeholder="Type a message…" className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-full text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-brand-500" />
-                  <button onClick={() => { setEmojiOpen(false); send(); }} className="bg-brand-500 text-black w-11 h-11 rounded-full flex items-center justify-center hover:bg-brand-400 transition-colors shrink-0"><Send className="w-4 h-4" /></button>
+                  <button type="button" onClick={() => alert('Photo & camera sharing coming soon!')} className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center shrink-0 hover:bg-brand-400 transition-colors"><Camera className="w-4 h-4 text-black" /></button>
+                  <div className="flex-1 flex items-center bg-white/5 border border-white/10 rounded-full px-3">
+                    <input value={body} onChange={e => setBody(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { setEmojiOpen(false); send(); } }} placeholder="Message…" className="flex-1 py-2.5 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none" />
+                    <button type="button" onClick={() => setEmojiOpen(o => !o)} className="text-white/40 hover:text-brand-400 transition-colors px-1"><Smile className="w-5 h-5" /></button>
+                  </div>
+                  {body.trim() ? (
+                    <button onClick={() => { setEmojiOpen(false); send(); }} className="text-brand-400 font-semibold text-sm px-2 shrink-0">Send</button>
+                  ) : (
+                    <>
+                      <button type="button" onClick={() => alert('Voice notes coming soon!')} className="text-white/50 hover:text-brand-400 shrink-0"><Mic className="w-5 h-5" /></button>
+                      <button type="button" onClick={() => alert('Photo sharing coming soon!')} className="text-white/50 hover:text-brand-400 shrink-0"><ImageIcon className="w-5 h-5" /></button>
+                    </>
+                  )}
                 </div>
               </>
             )}
