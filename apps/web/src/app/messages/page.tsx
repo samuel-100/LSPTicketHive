@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Send, MessageCircle, Smile, Users, X, Phone, Video, Camera, Image as ImageIcon, Mic } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle, Smile, Users, X, Phone, Video, Camera, Image as ImageIcon, Mic, Trash2, Play, Pause } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const EMOJIS = ["😀","😂","🥰","😎","😍","🤝","🙌","👏","🔥","🎉","🎟️","💸","💰","✅","👍","👎","❤️","🙏","💯","⭐","🎵","🕺","💃","🍻","📍","📅","⏰","😅","😢","😡","🤔","👀"];
@@ -222,13 +222,13 @@ function MessagesInner() {
     if (typeof window !== "undefined" && window.history.state?.chat) window.history.back();
     else { setActive(null); setThread(null); }
   }
-  async function send(imageUrl?: string) {
-    if ((!body.trim() && !imageUrl) || !active) return;
+  async function send(imageUrl?: string, audio?: { url: string; duration: number }) {
+    if ((!body.trim() && !imageUrl && !audio) || !active) return;
     const text = body.trim();
     setBody("");
     await fetch(`${API_URL}/api/messages/${active}/send`, {
       method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ body: text, imageUrl }),
+      body: JSON.stringify({ body: text, imageUrl, audioUrl: audio?.url, audioDuration: audio?.duration }),
     });
     loadThread(active, token);
     loadInbox(token);
@@ -253,6 +253,67 @@ function MessagesInner() {
     } catch {}
     setSendingImg(false);
     e.target.value = "";
+  }
+
+  // ---- Voice notes (WhatsApp-style hold/tap to record) ----
+  const [recording, setRecording] = useState(false);
+  const [recSecs, setRecSecs] = useState(0);
+  const [sendingVoice, setSendingVoice] = useState(false);
+  const mediaRecRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+  const recTimerRef = useRef<any>(null);
+  const cancelledRef = useRef(false);
+  const recSecsRef = useRef(0);
+
+  async function startRecording() {
+    if (recording || !active) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Prefer mp4/aac on iOS, fall back to webm.
+      const mime = MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4"
+        : MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      chunksRef.current = [];
+      cancelledRef.current = false;
+      rec.ondataavailable = (ev) => { if (ev.data.size) chunksRef.current.push(ev.data); };
+      rec.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        if (recTimerRef.current) clearInterval(recTimerRef.current);
+        const duration = recSecsRef.current;
+        setRecording(false);
+        setRecSecs(0);
+        if (cancelledRef.current || duration < 1) return; // discard taps/cancels
+        const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
+        await uploadVoice(blob, duration);
+      };
+      mediaRecRef.current = rec;
+      rec.start();
+      setRecording(true);
+      setRecSecs(0);
+      recSecsRef.current = 0;
+      recTimerRef.current = setInterval(() => { recSecsRef.current += 1; setRecSecs(s => s + 1); }, 1000);
+    } catch {
+      alert("Microphone access is needed to record a voice note.");
+    }
+  }
+  function stopRecording(cancel = false) {
+    cancelledRef.current = cancel;
+    mediaRecRef.current?.stop();
+  }
+  async function uploadVoice(blob: Blob, duration: number) {
+    setSendingVoice(true);
+    try {
+      const ext = blob.type.includes("mp4") ? "m4a" : "webm";
+      const r = await fetch(`${API_URL}/api/upload/presign`, {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ contentType: blob.type || "audio/webm", fileExtension: ext }),
+      }).then(r => r.json());
+      if (r.success) {
+        await fetch(r.data.uploadUrl, { method: "PUT", headers: { "Content-Type": blob.type || "audio/webm" }, body: blob });
+        await send(undefined, { url: r.data.publicUrl, duration });
+      }
+    } catch {}
+    setSendingVoice(false);
   }
 
   return (
@@ -287,7 +348,7 @@ function MessagesInner() {
                     <span className="text-sm font-medium text-white truncate">{c.other?.firstName} {c.other?.lastName?.[0]}.</span>
                     {c.unread > 0 && <span className="bg-brand-500 text-black text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center">{c.unread}</span>}
                   </div>
-                  <p className="text-xs text-white/40 truncate">{c.lastMessage?.body || "New conversation"}</p>
+                  <p className="text-xs text-white/40 truncate">{c.lastMessage?.audioUrl ? "🎤 Voice message" : c.lastMessage?.imageUrl && !c.lastMessage?.body ? "📷 Photo" : c.lastMessage?.body || "New conversation"}</p>
                 </div>
               </button>
             ))}
@@ -338,6 +399,7 @@ function MessagesInner() {
                           {thread.isGroup && !mine && m.sender && (
                             <div className="text-[11px] font-semibold text-brand-400 mb-0.5 px-1 pt-1">{m.sender.firstName} {m.sender.lastName?.[0]}.</div>
                           )}
+                          {m.audioUrl && <VoiceNote url={m.audioUrl} duration={m.audioDuration} mine={mine} />}
                           {m.imageUrl && (
                             <a href={m.imageUrl} target="_blank" rel="noopener noreferrer">
                               <img src={m.imageUrl} alt="" className="rounded-xl max-w-full max-h-64 object-cover" />
@@ -362,21 +424,39 @@ function MessagesInner() {
                       ))}
                     </div>
                   )}
-                  <label className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center shrink-0 hover:bg-brand-400 transition-colors cursor-pointer">
-                    {sendingImg ? <span className="w-3 h-3 border-2 border-black/40 border-t-black rounded-full animate-spin" /> : <Camera className="w-4 h-4 text-black" />}
-                    <input type="file" accept="image/*" onChange={sendPhoto} className="hidden" />
-                  </label>
-                  <div className="flex-1 flex items-center bg-white/5 border border-white/10 rounded-full px-3">
-                    <input value={body} onChange={e => setBody(e.target.value)} onFocus={() => setTimeout(() => bottomRef.current?.scrollIntoView({ block: "end" }), 300)} onKeyDown={e => { if (e.key === "Enter") { setEmojiOpen(false); send(); } }} placeholder="Message…" className="flex-1 py-2.5 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none" />
-                    <button type="button" onClick={() => setEmojiOpen(o => !o)} className="text-white/40 hover:text-brand-400 transition-colors px-1"><Smile className="w-5 h-5" /></button>
-                  </div>
-                  {body.trim() ? (
-                    <button onClick={() => { setEmojiOpen(false); send(); }} className="text-brand-400 font-semibold text-sm px-2 shrink-0">Send</button>
+                  {recording ? (
+                    /* Recording bar — WhatsApp-style: cancel (bin), timer, send */
+                    <div className="flex-1 flex items-center gap-3">
+                      <button onClick={() => stopRecording(true)} className="text-red-400 shrink-0" aria-label="Cancel recording"><Trash2 className="w-5 h-5" /></button>
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+                      <span className="text-sm text-white tabular-nums flex-1">{Math.floor(recSecs / 60)}:{(recSecs % 60).toString().padStart(2, "0")}</span>
+                      <span className="text-xs text-white/40">slide bin to cancel</span>
+                      <button onClick={() => stopRecording(false)} className="w-10 h-10 rounded-full bg-brand-500 flex items-center justify-center shrink-0 active:scale-90 transition-transform" aria-label="Send voice note"><Send className="w-4 h-4 text-black" /></button>
+                    </div>
                   ) : (
-                    <label className="text-white/50 hover:text-brand-400 shrink-0 cursor-pointer">
-                      <ImageIcon className="w-5 h-5" />
-                      <input type="file" accept="image/*" onChange={sendPhoto} className="hidden" />
-                    </label>
+                    <>
+                      <label className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center shrink-0 hover:bg-brand-400 transition-colors cursor-pointer">
+                        {sendingImg ? <span className="w-3 h-3 border-2 border-black/40 border-t-black rounded-full animate-spin" /> : <Camera className="w-4 h-4 text-black" />}
+                        <input type="file" accept="image/*" onChange={sendPhoto} className="hidden" />
+                      </label>
+                      <div className="flex-1 flex items-center bg-white/5 border border-white/10 rounded-full px-3">
+                        <input value={body} onChange={e => setBody(e.target.value)} onFocus={() => setTimeout(() => bottomRef.current?.scrollIntoView({ block: "end" }), 300)} onKeyDown={e => { if (e.key === "Enter") { setEmojiOpen(false); send(); } }} placeholder="Message…" className="flex-1 py-2.5 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none" />
+                        <button type="button" onClick={() => setEmojiOpen(o => !o)} className="text-white/40 hover:text-brand-400 transition-colors px-1"><Smile className="w-5 h-5" /></button>
+                      </div>
+                      {body.trim() ? (
+                        <button onClick={() => { setEmojiOpen(false); send(); }} className="text-brand-400 font-semibold text-sm px-2 shrink-0">Send</button>
+                      ) : (
+                        <>
+                          <label className="text-white/50 hover:text-brand-400 shrink-0 cursor-pointer">
+                            <ImageIcon className="w-5 h-5" />
+                            <input type="file" accept="image/*" onChange={sendPhoto} className="hidden" />
+                          </label>
+                          <button onClick={startRecording} className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center shrink-0 active:scale-90 hover:bg-brand-400 transition-all" aria-label="Record voice note">
+                            {sendingVoice ? <span className="w-3 h-3 border-2 border-black/40 border-t-black rounded-full animate-spin" /> : <Mic className="w-4 h-4 text-black" />}
+                          </button>
+                        </>
+                      )}
+                    </>
                   )}
                 </div>
               </>
@@ -461,6 +541,49 @@ function MessagesInner() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// WhatsApp-style voice-note bubble: play/pause + progress bar + duration.
+function VoiceNote({ url, duration, mine }: { url: string; duration?: number; mine: boolean }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0); // 0..1
+  const total = duration || 0;
+
+  function toggle() {
+    const a = audioRef.current;
+    if (!a) return;
+    if (playing) { a.pause(); } else { a.play().catch(() => {}); }
+  }
+  function fmt(s: number) {
+    const m = Math.floor(s / 60); const ss = Math.floor(s % 60);
+    return `${m}:${ss.toString().padStart(2, "0")}`;
+  }
+  const accent = mine ? "text-black" : "text-white";
+  const track = mine ? "bg-black/20" : "bg-white/20";
+  const fill = mine ? "bg-black/60" : "bg-white/70";
+  return (
+    <div className="flex items-center gap-2 min-w-[180px] py-0.5">
+      <audio
+        ref={audioRef}
+        src={url}
+        preload="metadata"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => { setPlaying(false); setProgress(0); }}
+        onTimeUpdate={(e) => { const a = e.currentTarget; if (a.duration) setProgress(a.currentTime / a.duration); }}
+      />
+      <button onClick={toggle} className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${mine ? "bg-black/15" : "bg-white/15"} ${accent}`}>
+        {playing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+      </button>
+      <div className="flex-1">
+        <div className={`h-1 rounded-full ${track} overflow-hidden`}>
+          <div className={`h-full ${fill}`} style={{ width: `${Math.max(progress * 100, 2)}%` }} />
+        </div>
+      </div>
+      <span className={`text-[10px] shrink-0 ${mine ? "text-black/60" : "text-white/50"}`}>{fmt(total)}</span>
     </div>
   );
 }

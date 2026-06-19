@@ -214,13 +214,15 @@ messagesRouter.post("/:id/send", authenticate, async (req: AuthRequest, res) => 
   const me = req.user!.userId;
   const body = (req.body?.body || "").trim();
   const imageUrl = req.body?.imageUrl || null;
-  if (!body && !imageUrl) return res.status(400).json({ success: false, error: "Message required" });
+  const audioUrl = req.body?.audioUrl || null;
+  const audioDuration = req.body?.audioDuration ? Math.round(Number(req.body.audioDuration)) : null;
+  if (!body && !imageUrl && !audioUrl) return res.status(400).json({ success: false, error: "Message required" });
 
   const convo = await prisma.conversation.findUnique({ where: { id: req.params.id }, include: { members: true } });
   if (!convo || !isMember(convo, me, convo.members.map((m: any) => m.userId))) {
     return res.status(403).json({ success: false, error: "Not your conversation" });
   }
-  const message = await prisma.message.create({ data: { conversationId: convo.id, senderId: me, body, imageUrl } });
+  const message = await prisma.message.create({ data: { conversationId: convo.id, senderId: me, body, imageUrl, audioUrl, audioDuration } });
   await prisma.conversation.update({ where: { id: convo.id }, data: { lastMessageAt: new Date() } });
   res.json({ success: true, data: message });
 });

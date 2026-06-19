@@ -15,11 +15,14 @@ uploadRouter.post("/presign", authenticate, async (req, res) => {
   try {
     const { contentType, fileExtension } = req.body;
 
-    if (!contentType || !contentType.startsWith("image/")) {
-      return res.status(400).json({ success: false, error: "Only image uploads allowed" });
+    const isImage = contentType?.startsWith("image/");
+    const isAudio = contentType?.startsWith("audio/");
+    if (!contentType || (!isImage && !isAudio)) {
+      return res.status(400).json({ success: false, error: "Only image or audio uploads allowed" });
     }
 
-    const key = `events/${crypto.randomUUID()}.${fileExtension || "jpg"}`;
+    const folder = isAudio ? "voice" : "events";
+    const key = `${folder}/${crypto.randomUUID()}.${fileExtension || (isAudio ? "webm" : "jpg")}`;
 
     const command = new PutObjectCommand({
       Bucket: BUCKET,

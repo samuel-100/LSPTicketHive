@@ -316,6 +316,8 @@ model Message {
   senderId       String
   body           String   @default("")
   imageUrl       String?
+  audioUrl       String?
+  audioDuration  Int?      // seconds, for the voice-note waveform/length
   readAt         DateTime?
   createdAt      DateTime @default(now())
 
