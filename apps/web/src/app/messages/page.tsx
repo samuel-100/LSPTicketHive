@@ -195,13 +195,16 @@ function MessagesInner() {
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
-        <div className="flex items-center justify-between mb-5">
+        {/* Hide page heading on mobile when a chat is open, to maximise space */}
+        <div className={`items-center justify-between mb-5 ${active ? "hidden md:flex" : "flex"}`}>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2"><MessageCircle className="w-6 h-6 text-brand-400" /> Messages</h1>
           <button onClick={openNewGroup} className="flex items-center gap-2 bg-brand-500 text-black px-4 py-2 rounded-xl text-sm font-semibold hover:bg-brand-400 transition-colors">
             <Users className="w-4 h-4" /> New Group
           </button>
         </div>
-        <div className="grid md:grid-cols-3 gap-4 h-[70vh]">
+        {/* When a chat is open on mobile, fill the screen so the composer sits
+            right above the keyboard (dvh resizes with the keyboard). */}
+        <div className={`grid md:grid-cols-3 gap-4 md:h-[72vh] ${active ? "fixed inset-0 z-[60] bg-[#0a0a0a] h-[100dvh] md:static md:z-auto md:h-[72vh]" : "h-[72vh]"}`}>
           {/* Inbox */}
           <div className={`md:col-span-1 bg-white/[0.02] border border-white/5 rounded-2xl overflow-y-auto ${active ? "hidden md:block" : ""}`}>
             {convos.length === 0 ? (
@@ -282,7 +285,7 @@ function MessagesInner() {
                   })}
                   <div ref={bottomRef} />
                 </div>
-                <div className="p-3 border-t border-white/5 flex items-center gap-2 relative">
+                <div className="p-3 border-t border-white/5 flex items-center gap-2 relative" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
                   {emojiOpen && (
                     <div className="absolute bottom-16 left-3 bg-[#1a1a1a] border border-white/10 rounded-xl p-2 grid grid-cols-8 gap-1 shadow-2xl z-20 w-72">
                       {EMOJIS.map(e => (
