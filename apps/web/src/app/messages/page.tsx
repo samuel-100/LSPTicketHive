@@ -33,6 +33,41 @@ function MessagesInner() {
   const [meIsAdmin, setMeIsAdmin] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Track the visual viewport so the chat pins to the keyboard on mobile.
+  // iOS Safari does NOT shrink 100dvh when the keyboard opens, so we measure
+  // window.visualViewport.height directly and apply it as the chat height.
+  const [vvHeight, setVvHeight] = useState<number | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const onMq = () => setIsMobile(mq.matches);
+    onMq();
+    mq.addEventListener("change", onMq);
+    const vv = window.visualViewport;
+    const onResize = () => {
+      if (vv) setVvHeight(vv.height);
+      // Keep the latest message in view as the keyboard opens/closes.
+      setTimeout(() => bottomRef.current?.scrollIntoView({ block: "end" }), 0);
+    };
+    if (vv) {
+      onResize();
+      vv.addEventListener("resize", onResize);
+      vv.addEventListener("scroll", onResize);
+    }
+    return () => {
+      mq.removeEventListener("change", onMq);
+      if (vv) { vv.removeEventListener("resize", onResize); vv.removeEventListener("scroll", onResize); }
+    };
+  }, []);
+  // Lock background scroll while a chat is open on mobile (prevents the page
+  // behind the fixed chat from scrolling under the keyboard).
+  useEffect(() => {
+    if (active && isMobile) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
+    }
+  }, [active, isMobile]);
+
   async function openMembers() {
     if (!active) return;
     const d = await fetch(`${API_URL}/api/messages/${active}/members`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
@@ -202,9 +237,14 @@ function MessagesInner() {
             <Users className="w-4 h-4" /> New Group
           </button>
         </div>
-        {/* When a chat is open on mobile, fill the screen so the composer sits
-            right above the keyboard (dvh resizes with the keyboard). */}
-        <div className={`grid md:grid-cols-3 gap-4 md:h-[72vh] ${active ? "fixed inset-0 z-[60] bg-[#0a0a0a] h-[100dvh] md:static md:z-auto md:h-[72vh]" : "h-[72vh]"}`}>
+        {/* When a chat is open on mobile, the chat is fixed to the top of the
+            VISUAL viewport and its height tracks window.visualViewport — so as
+            the keyboard slides up, the chat shrinks and the composer stays
+            pinned directly above the keyboard (iOS-safe, unlike 100dvh). */}
+        <div
+          className={`grid md:grid-cols-3 gap-4 md:h-[72vh] md:static md:z-auto ${active ? "fixed top-0 left-0 right-0 z-[60] bg-[#0a0a0a]" : "h-[72vh]"}`}
+          style={active && isMobile && vvHeight ? { height: `${vvHeight}px` } : undefined}
+        >
           {/* Inbox */}
           <div className={`md:col-span-1 bg-white/[0.02] border border-white/5 rounded-2xl overflow-y-auto ${active ? "hidden md:block" : ""}`}>
             {convos.length === 0 ? (
