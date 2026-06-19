@@ -7,6 +7,7 @@ import { Calendar, MapPin, Search } from "lucide-react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 import { TOP_CATEGORIES } from "../lib/categories";
+import { eventImage } from "../lib/eventImage";
 
 const EventMap = dynamic(() => import("../components/EventMap"), { ssr: false });
 
@@ -234,13 +235,7 @@ function EventsContent() {
                       <Link href={`/events/${event.id}`} className="group flex gap-4 bg-white/[0.02] border border-white/5 rounded-2xl p-4 hover:border-brand-500/40 hover:bg-white/[0.04] hover:shadow-[0_0_25px_-12px_rgba(34,197,94,0.35)] transition-all">
                         {/* Image */}
                         <div className="w-40 h-28 rounded-xl overflow-hidden shrink-0 relative">
-                          {event.coverImageUrl ? (
-                            <img src={event.coverImageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                          ) : (
-                            <div className="on-image w-full h-full bg-gradient-to-br from-brand-600 to-emerald-800 flex items-center justify-center">
-                              <span className="text-white/80 text-xs uppercase tracking-wider font-medium">{event.category}</span>
-                            </div>
-                          )}
+                          <img src={eventImage(event.coverImageUrl, event.category)} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                           <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-md text-white text-[11px] font-semibold px-2 py-0.5 rounded-full">
                             {getMinPrice(event)}
                           </div>

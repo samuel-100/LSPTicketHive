@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Calendar, MapPin } from "lucide-react";
+import { eventImage } from "../lib/eventImage";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
@@ -72,13 +73,7 @@ export default function EventsGrid({ endpoint = "/api/events?limit=6&sort=popula
           >
             <Link href={`/events/${event.id}`} className="group block bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden hover:border-brand-500/40 hover:shadow-[0_0_30px_-10px_rgba(34,197,94,0.3)] transition-all duration-300">
               <div className="h-44 relative overflow-hidden">
-                {event.coverImageUrl ? (
-                  <img src={event.coverImageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                ) : (
-                  <div className="on-image w-full h-full bg-gradient-to-br from-brand-600 to-emerald-800 flex items-center justify-center">
-                    <span className="text-white/80 text-xs uppercase tracking-wider font-medium">{event.category || "Event"}</span>
-                  </div>
-                )}
+                <img src={eventImage(event.coverImageUrl, event.category)} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-white text-xs font-semibold px-2.5 py-1 rounded-full">
                   {getMinPrice(event)}
