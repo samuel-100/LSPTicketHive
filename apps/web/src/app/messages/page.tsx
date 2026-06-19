@@ -37,6 +37,7 @@ function MessagesInner() {
   // iOS Safari does NOT shrink 100dvh when the keyboard opens, so we measure
   // window.visualViewport.height directly and apply it as the chat height.
   const [vvHeight, setVvHeight] = useState<number | null>(null);
+  const [vvTop, setVvTop] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -44,25 +45,20 @@ function MessagesInner() {
     onMq();
     mq.addEventListener("change", onMq);
     const vv = window.visualViewport;
-    // Only react to MEANINGFUL height changes (the keyboard, ~150px+). Ignore
-    // the tiny jitter from Safari's address bar collapsing on scroll — that
-    // jitter + a scrollIntoView call was causing the shaking feedback loop.
-    let last = vv ? vv.height : 0;
-    const onResize = () => {
-      if (!vv) return;
-      if (Math.abs(vv.height - last) < 60) return; // ignore toolbar jitter
-      last = vv.height;
-      setVvHeight(vv.height);
-    };
+    // Track BOTH the visible height and the visible-viewport offsetTop. On iOS,
+    // a position:fixed element is anchored to the LAYOUT viewport, so when the
+    // keyboard opens the visual viewport shifts down — we translate the chat by
+    // offsetTop so its bottom sits right on the keyboard (no gap).
+    // We only react on 'resize' (keyboard open/close), NOT 'scroll' — that fires
+    // on every Safari toolbar move and caused the shaking feedback loop.
+    const apply = () => { if (vv) { setVvHeight(vv.height); setVvTop(vv.offsetTop); } };
     if (vv) {
-      last = vv.height;
-      setVvHeight(vv.height);
-      vv.addEventListener("resize", onResize);
-      // NOTE: do NOT listen to vv 'scroll' — that fires on every toolbar move.
+      apply();
+      vv.addEventListener("resize", apply);
     }
     return () => {
       mq.removeEventListener("change", onMq);
-      if (vv) vv.removeEventListener("resize", onResize);
+      if (vv) vv.removeEventListener("resize", apply);
     };
   }, []);
   // While a chat is open on mobile: lock background scroll AND hide the global
@@ -265,8 +261,8 @@ function MessagesInner() {
             the keyboard slides up, the chat shrinks and the composer stays
             pinned directly above the keyboard (iOS-safe, unlike 100dvh). */}
         <div
-          className={`grid grid-rows-1 md:grid-cols-3 gap-4 md:h-[72vh] md:static md:z-auto ${active ? "fixed top-0 left-0 right-0 z-[60] bg-[#0a0a0a]" : "h-[72vh]"}`}
-          style={active && isMobile && vvHeight ? { height: `${vvHeight}px` } : undefined}
+          className={`grid grid-rows-1 md:grid-cols-3 gap-4 md:h-[72vh] md:static md:z-auto md:!transform-none ${active ? "fixed top-0 left-0 right-0 z-[60] bg-[#0a0a0a]" : "h-[72vh]"}`}
+          style={active && isMobile && vvHeight ? { height: `${vvHeight}px`, transform: `translateY(${vvTop}px)` } : undefined}
         >
           {/* Inbox */}
           <div className={`md:col-span-1 bg-white/[0.02] border border-white/5 rounded-2xl overflow-y-auto ${active ? "hidden md:block" : ""}`}>
@@ -362,7 +358,7 @@ function MessagesInner() {
                     <input type="file" accept="image/*" onChange={sendPhoto} className="hidden" />
                   </label>
                   <div className="flex-1 flex items-center bg-white/5 border border-white/10 rounded-full px-3">
-                    <input value={body} onChange={e => setBody(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { setEmojiOpen(false); send(); } }} placeholder="Message…" className="flex-1 py-2.5 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none" />
+                    <input value={body} onChange={e => setBody(e.target.value)} onFocus={() => setTimeout(() => bottomRef.current?.scrollIntoView({ block: "end" }), 300)} onKeyDown={e => { if (e.key === "Enter") { setEmojiOpen(false); send(); } }} placeholder="Message…" className="flex-1 py-2.5 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none" />
                     <button type="button" onClick={() => setEmojiOpen(o => !o)} className="text-white/40 hover:text-brand-400 transition-colors px-1"><Smile className="w-5 h-5" /></button>
                   </div>
                   {body.trim() ? (
