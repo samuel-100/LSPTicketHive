@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Camera, Mail, MapPin, Save, Ticket, Heart, Users, BadgeCheck, Rocket } from "lucide-react";
+import { Camera, Mail, MapPin, Save, Ticket, Heart, Users, BadgeCheck, Rocket, ChevronRight, Pencil, Megaphone, MessageCircle, HelpCircle, FileText, Lock, RefreshCw, LogOut } from "lucide-react";
+import Link from "next/link";
 import PhoneInput from "../components/PhoneInput";
 import CitySearch from "../components/CitySearch";
 
@@ -21,6 +22,7 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -97,6 +99,13 @@ export default function ProfilePage() {
     setUpgrading(false);
   }
 
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.dispatchEvent(new Event("auth-change"));
+    router.push("/");
+  }
+
   if (!user) return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white/30">Loading...</div>;
 
   const isBusiness = user.role === "ORGANIZER";
@@ -104,121 +113,96 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      {/* Cover */}
-      <div className="h-48 relative overflow-hidden">
-        <img
-          src="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1400&q=80"
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/60 to-[#0a0a0a]/30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-500/20 to-transparent mix-blend-overlay" />
-      </div>
+      <div className="max-w-2xl mx-auto px-5 py-6 pb-20">
+        <h1 className="text-3xl font-bold text-white mb-5">Account</h1>
 
-      <div className="max-w-3xl mx-auto px-6 -mt-16 relative z-10 pb-16">
-        {/* Header card */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row items-center sm:items-end gap-5 mb-8">
-          <div className="relative">
-            <div className="w-28 h-28 rounded-2xl overflow-hidden bg-[#141414] border-4 border-[#0a0a0a] flex items-center justify-center shadow-xl">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-3xl font-bold text-brand-400">{firstName[0]}{lastName[0]}</span>
-              )}
+        {/* Profile card */}
+        <div className="bg-white/[0.03] border border-white/5 rounded-2xl p-5 mb-8">
+          <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
+              <div className="w-20 h-20 rounded-full overflow-hidden bg-[#141414] flex items-center justify-center">
+                {avatarUrl ? <img src={avatarUrl} alt="" className="w-full h-full object-cover" /> : <span className="text-2xl font-bold text-brand-400">{firstName[0]}{lastName[0]}</span>}
+              </div>
+              <label className="absolute -bottom-1 -right-1 w-7 h-7 bg-brand-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-brand-400 transition-colors">
+                <Camera className="w-3.5 h-3.5 text-black" />
+                <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+              </label>
             </div>
-            <label className="absolute -bottom-1 -right-1 w-9 h-9 bg-brand-500 rounded-full flex items-center justify-center cursor-pointer hover:bg-brand-400 transition-colors shadow-lg">
-              <Camera className="w-4 h-4 text-black" />
-              <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
-            </label>
-          </div>
-          <div className="text-center sm:text-left flex-1">
-            <div className="flex items-center gap-2 justify-center sm:justify-start">
-              <h1 className="text-2xl font-bold text-white">{firstName} {lastName}</h1>
-              {user.emailVerified && <BadgeCheck className="w-5 h-5 text-brand-400" />}
-            </div>
-            <p className="text-white/40 text-sm">{user.email}</p>
-            <div className="flex items-center gap-2 justify-center sm:justify-start mt-2">
-              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${isBusiness ? "bg-brand-500/15 text-brand-400" : "bg-white/10 text-white/60"}`}>
-                {isBusiness ? "Business Account" : "Attendee"}
-              </span>
-              {joined && <span className="text-xs text-white/30">Joined {joined}</span>}
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-xl font-bold text-white truncate">{firstName} {lastName}</h2>
+                {user.emailVerified && <BadgeCheck className="w-5 h-5 text-brand-400 shrink-0" />}
+              </div>
+              {city && <p className="text-white/50 text-sm">{city}</p>}
+              <p className="text-white/40 text-xs mt-0.5">{isBusiness ? "Business account" : "Attendee"}{joined ? ` · Joined ${joined}` : ""}</p>
+              <div className="flex items-center gap-4 mt-2 text-sm">
+                <a href="/saved" className="text-white"><b>{user._count?.following ?? 0}</b> <span className="text-white/40">Following</span></a>
+                <a href="/tickets" className="text-white"><b>{user._count?.tickets ?? 0}</b> <span className="text-white/40">Tickets</span></a>
+              </div>
             </div>
           </div>
-          {uploading && <span className="text-xs text-brand-400">Uploading…</span>}
-        </motion.div>
-
-        {/* Stats — clickable */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <Stat href="/tickets" icon={<Ticket className="w-4 h-4" />} label="Tickets" value={user._count?.tickets ?? 0} />
-          <Stat href="/saved" icon={<Heart className="w-4 h-4" />} label="Following" value={user._count?.following ?? 0} />
-          <Stat href="/tickets" icon={<Users className="w-4 h-4" />} label="Orders" value={user._count?.orders ?? 0} />
         </div>
-
-        {/* Your city — discover locally */}
-        {city.trim() && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white/[0.02] border border-white/5 rounded-2xl p-5 mb-8">
-            <div className="flex items-center gap-2 mb-3">
-              <MapPin className="w-4 h-4 text-brand-400" />
-              <span className="text-white font-medium">Happening in {city}</span>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <a href={`/events?city=${encodeURIComponent(city)}`} className="flex-1 min-w-[140px] bg-brand-500/10 border border-brand-500/20 rounded-xl px-4 py-3 hover:bg-brand-500/15 transition-colors">
-                <div className="text-sm font-semibold text-brand-400">Events near you →</div>
-                <div className="text-xs text-white/40">Browse what&apos;s on in {city}</div>
-              </a>
-              <a href={`/promoters?city=${encodeURIComponent(city)}`} className="flex-1 min-w-[140px] bg-white/5 border border-white/10 rounded-xl px-4 py-3 hover:bg-white/10 transition-colors">
-                <div className="text-sm font-semibold text-white">Promoters in {city} →</div>
-                <div className="text-xs text-white/40">Organizers putting on events here</div>
-              </a>
-            </div>
-          </motion.div>
-        )}
 
         {/* Upgrade to business (attendees only) */}
         {!isBusiness && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-gradient-to-r from-brand-500/15 to-transparent border border-brand-500/20 rounded-2xl p-5 mb-8 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-brand-500/20 flex items-center justify-center shrink-0">
-              <Rocket className="w-6 h-6 text-brand-400" />
-            </div>
+          <button onClick={upgradeToBusiness} disabled={upgrading} className="w-full bg-gradient-to-r from-brand-500/15 to-transparent border border-brand-500/20 rounded-2xl p-4 mb-6 flex items-center gap-3 text-left hover:from-brand-500/25 transition-colors">
+            <div className="w-10 h-10 rounded-xl bg-brand-500/20 flex items-center justify-center shrink-0"><Rocket className="w-5 h-5 text-brand-400" /></div>
             <div className="flex-1">
-              <h3 className="text-white font-semibold">Start selling tickets</h3>
-              <p className="text-white/40 text-sm">Upgrade to a Business account to create and manage events.</p>
+              <div className="text-white font-semibold text-sm">Start selling tickets</div>
+              <div className="text-white/40 text-xs">Upgrade to a Business account</div>
             </div>
-            <button onClick={upgradeToBusiness} disabled={upgrading} className="bg-brand-500 text-black px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-brand-400 disabled:opacity-50 transition-colors shrink-0">
-              {upgrading ? "…" : "Upgrade"}
-            </button>
-          </motion.div>
+            <ChevronRight className="w-5 h-5 text-white/30" />
+          </button>
         )}
 
-        {/* Edit form */}
-        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 md:p-8">
-          <h2 className="text-lg font-semibold text-white mb-5">Edit details</h2>
-          <div className="space-y-5">
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="First Name"><input value={firstName} onChange={e => setFirstName(e.target.value)} className={inputCls} /></Field>
-              <Field label="Last Name"><input value={lastName} onChange={e => setLastName(e.target.value)} className={inputCls} /></Field>
-            </div>
-            <Field label="Email">
-              <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl">
-                <Mail className="w-4 h-4 text-white/30" />
-                <span className="text-white/50 text-sm flex-1">{user.email}</span>
-                {user.emailVerified && <span className="text-xs text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded-full">Verified</span>}
+        {/* Preferences */}
+        <SectionLabel>Preferences</SectionLabel>
+        <Group>
+          <Row icon={<Pencil className="w-5 h-5" />} label="Edit profile" onClick={() => setEditOpen(o => !o)} />
+          {editOpen && (
+            <div className="px-4 py-4 border-t border-white/5 space-y-4 bg-white/[0.01]">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="First Name"><input value={firstName} onChange={e => setFirstName(e.target.value)} className={inputCls} /></Field>
+                <Field label="Last Name"><input value={lastName} onChange={e => setLastName(e.target.value)} className={inputCls} /></Field>
               </div>
-            </Field>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Phone">
-                <PhoneInput value={phone} onChange={setPhone} />
+              <Field label="Email">
+                <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/10 rounded-xl">
+                  <Mail className="w-4 h-4 text-white/30" />
+                  <span className="text-white/50 text-sm flex-1 truncate">{user.email}</span>
+                  {user.emailVerified && <span className="text-xs text-brand-400 bg-brand-500/10 px-2 py-0.5 rounded-full">Verified</span>}
+                </div>
               </Field>
-              <Field label="City">
-                <CitySearch value={city} onChange={setCity} placeholder="Search your city…" />
-              </Field>
+              <Field label="Phone"><PhoneInput value={phone} onChange={setPhone} /></Field>
+              <Field label="City"><CitySearch value={city} onChange={setCity} placeholder="Search your city…" /></Field>
+              <button onClick={handleSave} disabled={saving} className="w-full flex items-center justify-center gap-2 bg-brand-500 text-black py-3 rounded-xl font-semibold hover:bg-brand-400 disabled:opacity-50 transition-colors">
+                <Save className="w-4 h-4" />{saved ? "Saved!" : saving ? "Saving…" : "Save Changes"}
+              </button>
             </div>
-            <button onClick={handleSave} disabled={saving} className="w-full flex items-center justify-center gap-2 bg-brand-500 text-black py-3.5 rounded-xl font-semibold hover:bg-brand-400 disabled:opacity-50 transition-colors">
-              <Save className="w-4 h-4" />
-              {saved ? "Saved!" : saving ? "Saving…" : "Save Changes"}
-            </button>
-          </div>
-        </div>
+          )}
+          <Row icon={<Heart className="w-5 h-5" />} label="Saved events" href="/saved" />
+          <Row icon={<Ticket className="w-5 h-5" />} label="My tickets" href="/tickets" />
+          {!isBusiness && <Row icon={<Megaphone className="w-5 h-5" />} label="Promote & Earn" href="/promote" />}
+          {isBusiness && <Row icon={<Megaphone className="w-5 h-5" />} label="Dashboard" href="/dashboard" />}
+          <Row icon={<MessageCircle className="w-5 h-5" />} label="Messages" href="/messages" last />
+        </Group>
+
+        {/* Help */}
+        <SectionLabel>Help</SectionLabel>
+        <Group>
+          <Row icon={<HelpCircle className="w-5 h-5" />} label="Browse Help Center" href="mailto:support@lsptickethive.com" last />
+        </Group>
+
+        {/* Legal */}
+        <SectionLabel>Legal</SectionLabel>
+        <Group>
+          <Row icon={<FileText className="w-5 h-5" />} label="Terms of Service" href="/legal/terms" />
+          <Row icon={<Lock className="w-5 h-5" />} label="Privacy" href="/legal/privacy" />
+          <Row icon={<RefreshCw className="w-5 h-5" />} label="Refund Policy" href="/legal/refund" last />
+        </Group>
+
+        <button onClick={handleLogout} className="flex items-center gap-3 text-red-400 font-medium mt-8 px-1">
+          <LogOut className="w-5 h-5" /> Sign out
+        </button>
       </div>
     </div>
   );
@@ -235,13 +219,22 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Stat({ icon, label, value, href }: { icon: React.ReactNode; label: string; value: number; href?: string }) {
-  const inner = (
-    <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4 text-center hover:border-brand-500/30 hover:bg-white/[0.04] transition-all h-full">
-      <div className="text-brand-400 flex justify-center mb-1.5">{icon}</div>
-      <div className="text-xl font-bold text-white">{value}</div>
-      <div className="text-xs text-white/30">{label}</div>
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <h3 className="text-lg font-bold text-white mt-7 mb-3">{children}</h3>;
+}
+
+function Group({ children }: { children: React.ReactNode }) {
+  return <div className="bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden">{children}</div>;
+}
+
+function Row({ icon, label, href, onClick, last }: { icon: React.ReactNode; label: string; href?: string; onClick?: () => void; last?: boolean }) {
+  const content = (
+    <div className={`flex items-center gap-3 px-4 py-4 hover:bg-white/[0.03] transition-colors ${last ? "" : "border-b border-white/5"}`}>
+      <span className="text-brand-400">{icon}</span>
+      <span className="flex-1 text-white text-[15px]">{label}</span>
+      <ChevronRight className="w-5 h-5 text-white/25" />
     </div>
   );
-  return href ? <a href={href}>{inner}</a> : inner;
+  if (href) return <Link href={href}>{content}</Link>;
+  return <button onClick={onClick} className="w-full text-left">{content}</button>;
 }
