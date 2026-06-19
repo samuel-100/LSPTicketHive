@@ -314,7 +314,8 @@ model Message {
   id             String   @id @default(cuid())
   conversationId String
   senderId       String
-  body           String
+  body           String   @default("")
+  imageUrl       String?
   readAt         DateTime?
   createdAt      DateTime @default(now())
 

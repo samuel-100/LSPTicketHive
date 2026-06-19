@@ -104,7 +104,11 @@ function MessagesInner() {
     const i = setInterval(async () => {
       const d = await fetch(`${API_URL}/api/messages`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
       const list = d.data || [];
-      setConvos(list);
+      // Only re-render the inbox if it actually changed (avoids flicker).
+      setConvos((prev) => {
+        const sig = (arr: any[]) => arr.map((c) => `${c.id}:${c.lastMessage?.id || ""}:${c.unread}`).join("|");
+        return sig(prev) === sig(list) ? prev : list;
+      });
       const totalUnread = list.reduce((s: number, c: any) => s + (c.unread || 0), 0);
       document.title = totalUnread > 0 ? `(${totalUnread}) Messages · LSPTicketHive` : "Messages · LSPTicketHive";
       for (const c of list) {
@@ -129,10 +133,19 @@ function MessagesInner() {
     try {
       const d = await fetch(`${API_URL}/api/messages/${id}`, { headers: { Authorization: `Bearer ${t}` } }).then(r => r.json());
       if (d.success) {
-        setThread(d.data);
-        if (!silent) setTimeout(() => bottomRef.current?.scrollIntoView(), 50);
+        // On polls (silent), only update + scroll if something actually changed —
+        // avoids constant re-renders and scroll jumps.
+        setThread((prev: any) => {
+          const prevMsgs = prev?.messages || [];
+          const next = d.data.messages || [];
+          const changed = !silent || prevMsgs.length !== next.length ||
+            (next.length && prevMsgs.length && next[next.length - 1].id !== prevMsgs[prevMsgs.length - 1].id) ||
+            JSON.stringify(prevMsgs.map((m: any) => m.readAt)) !== JSON.stringify(next.map((m: any) => m.readAt));
+          if (silent && !changed && prev?.conversationId === d.data.conversationId) return prev;
+          if (next.length > prevMsgs.length || !silent) setTimeout(() => bottomRef.current?.scrollIntoView(silent ? { behavior: "smooth" } : undefined), 50);
+          return d.data;
+        });
       } else if (!silent) {
-        // Surface so it never silently shows "Select a conversation".
         setThread({ other: null, messages: [], conversationId: id, error: d.error || "Could not open conversation" });
       }
     } catch {
@@ -146,17 +159,37 @@ function MessagesInner() {
     const t = localStorage.getItem("token") || token;
     if (t) loadThread(id, t);
   }
-  async function send() {
-    if (!body.trim() || !active) return;
+  async function send(imageUrl?: string) {
+    if ((!body.trim() && !imageUrl) || !active) return;
     const text = body.trim();
     setBody("");
     await fetch(`${API_URL}/api/messages/${active}/send`, {
       method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ body: text }),
+      body: JSON.stringify({ body: text, imageUrl }),
     });
     loadThread(active, token);
     loadInbox(token);
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
+  }
+
+  const [sendingImg, setSendingImg] = useState(false);
+  async function sendPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !active) return;
+    setSendingImg(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const r = await fetch(`${API_URL}/api/upload/presign`, {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ contentType: file.type, fileExtension: ext }),
+      }).then(r => r.json());
+      if (r.success) {
+        await fetch(r.data.uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+        await send(r.data.publicUrl);
+      }
+    } catch {}
+    setSendingImg(false);
+    e.target.value = "";
   }
 
   return (
@@ -229,12 +262,17 @@ function MessagesInner() {
                             {av ? <img src={av} className="w-full h-full object-cover" alt="" /> : <span className="text-brand-400 text-[11px] font-bold">{initial}</span>}
                           </div>
                         )}
-                        <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm shadow-sm ${mine ? "bg-brand-500 text-black rounded-br-md" : "bg-[#2a3942] text-white rounded-bl-md"}`}>
+                        <div className={`max-w-[75%] rounded-2xl text-sm shadow-sm overflow-hidden ${m.imageUrl && !m.body ? "" : "px-3 py-2"} ${mine ? "bg-brand-500 text-black rounded-br-md" : "bg-[#2a3942] text-white rounded-bl-md"}`}>
                           {thread.isGroup && !mine && m.sender && (
-                            <div className="text-[11px] font-semibold text-brand-400 mb-0.5">{m.sender.firstName} {m.sender.lastName?.[0]}.</div>
+                            <div className="text-[11px] font-semibold text-brand-400 mb-0.5 px-1 pt-1">{m.sender.firstName} {m.sender.lastName?.[0]}.</div>
                           )}
-                          <span className="whitespace-pre-wrap break-words">{m.body}</span>
-                          <span className={`inline-flex items-center gap-0.5 ml-2 align-bottom text-[10px] ${mine ? "text-black/50" : "text-white/40"}`}>
+                          {m.imageUrl && (
+                            <a href={m.imageUrl} target="_blank" rel="noopener noreferrer">
+                              <img src={m.imageUrl} alt="" className="rounded-xl max-w-full max-h-64 object-cover" />
+                            </a>
+                          )}
+                          {m.body && <span className="whitespace-pre-wrap break-words">{m.body}</span>}
+                          <span className={`inline-flex items-center gap-0.5 ml-2 align-bottom text-[10px] ${m.imageUrl && !m.body ? "px-2 pb-1" : ""} ${mine ? "text-black/50" : "text-white/40"}`}>
                             {time}
                             {mine && <span>{m.readAt ? "✓✓" : "✓"}</span>}
                           </span>
@@ -252,7 +290,10 @@ function MessagesInner() {
                       ))}
                     </div>
                   )}
-                  <button type="button" onClick={() => alert('Photo & camera sharing coming soon!')} className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center shrink-0 hover:bg-brand-400 transition-colors"><Camera className="w-4 h-4 text-black" /></button>
+                  <label className="w-9 h-9 rounded-full bg-brand-500 flex items-center justify-center shrink-0 hover:bg-brand-400 transition-colors cursor-pointer">
+                    {sendingImg ? <span className="w-3 h-3 border-2 border-black/40 border-t-black rounded-full animate-spin" /> : <Camera className="w-4 h-4 text-black" />}
+                    <input type="file" accept="image/*" onChange={sendPhoto} className="hidden" />
+                  </label>
                   <div className="flex-1 flex items-center bg-white/5 border border-white/10 rounded-full px-3">
                     <input value={body} onChange={e => setBody(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { setEmojiOpen(false); send(); } }} placeholder="Message…" className="flex-1 py-2.5 bg-transparent text-sm text-white placeholder:text-white/30 focus:outline-none" />
                     <button type="button" onClick={() => setEmojiOpen(o => !o)} className="text-white/40 hover:text-brand-400 transition-colors px-1"><Smile className="w-5 h-5" /></button>
@@ -260,10 +301,10 @@ function MessagesInner() {
                   {body.trim() ? (
                     <button onClick={() => { setEmojiOpen(false); send(); }} className="text-brand-400 font-semibold text-sm px-2 shrink-0">Send</button>
                   ) : (
-                    <>
-                      <button type="button" onClick={() => alert('Voice notes coming soon!')} className="text-white/50 hover:text-brand-400 shrink-0"><Mic className="w-5 h-5" /></button>
-                      <button type="button" onClick={() => alert('Photo sharing coming soon!')} className="text-white/50 hover:text-brand-400 shrink-0"><ImageIcon className="w-5 h-5" /></button>
-                    </>
+                    <label className="text-white/50 hover:text-brand-400 shrink-0 cursor-pointer">
+                      <ImageIcon className="w-5 h-5" />
+                      <input type="file" accept="image/*" onChange={sendPhoto} className="hidden" />
+                    </label>
                   )}
                 </div>
               </>

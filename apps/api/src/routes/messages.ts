@@ -213,13 +213,14 @@ messagesRouter.get("/:id", authenticate, async (req: AuthRequest, res) => {
 messagesRouter.post("/:id/send", authenticate, async (req: AuthRequest, res) => {
   const me = req.user!.userId;
   const body = (req.body?.body || "").trim();
-  if (!body) return res.status(400).json({ success: false, error: "Message required" });
+  const imageUrl = req.body?.imageUrl || null;
+  if (!body && !imageUrl) return res.status(400).json({ success: false, error: "Message required" });
 
   const convo = await prisma.conversation.findUnique({ where: { id: req.params.id }, include: { members: true } });
   if (!convo || !isMember(convo, me, convo.members.map((m: any) => m.userId))) {
     return res.status(403).json({ success: false, error: "Not your conversation" });
   }
-  const message = await prisma.message.create({ data: { conversationId: convo.id, senderId: me, body } });
+  const message = await prisma.message.create({ data: { conversationId: convo.id, senderId: me, body, imageUrl } });
   await prisma.conversation.update({ where: { id: convo.id }, data: { lastMessageAt: new Date() } });
   res.json({ success: true, data: message });
 });
