@@ -35,18 +35,6 @@ export default function TicketsPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <header className="bg-[#0a0a0a]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-50">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-brand-500 rounded-lg flex items-center justify-center">
-              <Ticket className="w-4 h-4 text-black" />
-            </div>
-            <span className="text-lg font-bold text-white">LSPTicketHive</span>
-          </Link>
-          <Link href="/events" className="text-white/40 text-sm hover:text-white transition-colors">Browse Events</Link>
-        </div>
-      </header>
-
       <div className="max-w-3xl mx-auto px-6 py-10">
         <h1 className="text-3xl font-bold text-white mb-2">My Tickets</h1>
         <p className="text-white/40 mb-8">All your upcoming events</p>

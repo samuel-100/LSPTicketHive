@@ -94,17 +94,6 @@ function OrderContent() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a]">
-      <header className="bg-[#0a0a0a]/80 backdrop-blur-md border-b border-white/5 sticky top-0 z-50">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-brand-500 rounded-lg flex items-center justify-center">
-              <Ticket className="w-4 h-4 text-black" />
-            </div>
-            <span className="text-lg font-bold text-white">LSPTicketHive</span>
-          </Link>
-          <Link href="/tickets" className="text-brand-400 text-sm font-medium">My Tickets</Link>
-        </div>
-      </header>
 
       <div className="max-w-3xl mx-auto px-6 py-10">
         {isSuccess && (
