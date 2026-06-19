@@ -3,6 +3,7 @@ import "./globals.css";
 import Navbar from "./components/Navbar";
 import PWA from "./components/PWA";
 import BottomNav from "./components/BottomNav";
+import CallProvider from "./components/CallProvider";
 
 export const metadata: Metadata = {
   title: "LSPTicketHive — Events & Tickets",
@@ -38,10 +39,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen bg-[#0a0a0a]">
-        <Navbar />
-        <main className="pb-16 md:pb-0" style={{ paddingTop: "calc(3.5rem + env(safe-area-inset-top))" }}>{children}</main>
-        <BottomNav />
-        <PWA />
+        <CallProvider>
+          <Navbar />
+          <main className="pb-16 md:pb-0" style={{ paddingTop: "calc(3.5rem + env(safe-area-inset-top))" }}>{children}</main>
+          <BottomNav />
+          <PWA />
+        </CallProvider>
       </body>
     </html>
   );

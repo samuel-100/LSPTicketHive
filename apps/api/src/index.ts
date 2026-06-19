@@ -16,6 +16,8 @@ import { organizerRouter } from "./routes/organizer";
 import { promoterRouter } from "./routes/promoter";
 import { messagesRouter } from "./routes/messages";
 import { oauthRouter } from "./routes/oauth";
+import { attachSignaling } from "./services/signaling";
+import { createServer } from "http";
 import passport from "passport";
 
 const app = express();
@@ -48,8 +50,13 @@ app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-app.listen(PORT, () => {
-  console.log(`LSPTicketHive API running on port ${PORT}`);
+// Wrap Express in an explicit HTTP server so the WebRTC signaling WebSocket
+// (path /api/rtc) can share the same port behind nginx.
+const httpServer = createServer(app);
+attachSignaling(httpServer);
+
+httpServer.listen(PORT, () => {
+  console.log(`LSPTicketHive API + signaling running on port ${PORT}`);
 });
 
 export default app;

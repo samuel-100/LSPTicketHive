@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Send, MessageCircle, Smile, Users, X, Phone, Video, Camera, Image as ImageIcon, Mic, Trash2, Play, Pause } from "lucide-react";
+import { useCall } from "../components/CallProvider";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 const EMOJIS = ["😀","😂","🥰","😎","😍","🤝","🙌","👏","🔥","🎉","🎟️","💸","💰","✅","👍","👎","❤️","🙏","💯","⭐","🎵","🕺","💃","🍻","📍","📅","⏰","😅","😢","😡","🤔","👀"];
@@ -18,6 +19,7 @@ export default function MessagesPage() {
 function MessagesInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { startCall } = useCall();
   const [token, setToken] = useState("");
   const [meId, setMeId] = useState("");
   const [convos, setConvos] = useState<any[]>([]);
@@ -376,9 +378,13 @@ function MessagesInner() {
                       <div className="text-xs text-white/40 truncate">{thread.isGroup ? `${thread.other?.memberCount || 0} members · tap to manage` : (thread.other?.role === "ORGANIZER" ? "Business" : "Active now")}</div>
                     </div>
                   </button>
-                  {/* Call / video — circular like Instagram (placeholder actions) */}
-                  <button onClick={() => alert('Voice calls are coming soon!')} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0"><Phone className="w-[18px] h-[18px]" /></button>
-                  <button onClick={() => alert('Video calls are coming soon!')} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0"><Video className="w-[18px] h-[18px]" /></button>
+                  {/* Real WebRTC voice / video calls (1-1 only). */}
+                  {!thread.isGroup && thread.other?.id && (
+                    <>
+                      <button onClick={() => startCall(thread.other.id, `${thread.other.firstName} ${thread.other.lastName || ""}`.trim(), "audio")} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0"><Phone className="w-[18px] h-[18px]" /></button>
+                      <button onClick={() => startCall(thread.other.id, `${thread.other.firstName} ${thread.other.lastName || ""}`.trim(), "video")} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0"><Video className="w-[18px] h-[18px]" /></button>
+                    </>
+                  )}
                 </div>
                 <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1.5" style={{ backgroundImage: "radial-gradient(circle at 25% 15%, rgba(34,197,94,0.04), transparent 40%)" }}>
                   {thread.messages.map((m: any) => {
