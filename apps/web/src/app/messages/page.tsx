@@ -265,8 +265,8 @@ function MessagesInner() {
             ))}
           </div>
 
-          {/* Thread */}
-          <div className={`md:col-span-2 bg-white/[0.02] border border-white/5 rounded-2xl flex flex-col ${!active ? "hidden md:flex" : ""}`}>
+          {/* Thread — edge-to-edge full screen on mobile, card on desktop */}
+          <div className={`md:col-span-2 bg-white/[0.02] flex flex-col min-h-0 border-white/5 md:border md:rounded-2xl ${!active ? "hidden md:flex" : ""}`}>
             {!active ? (
               <div className="flex-1 flex items-center justify-center text-white/30 text-sm">Select a conversation</div>
             ) : !thread ? (
@@ -275,8 +275,9 @@ function MessagesInner() {
               <div className="flex-1 flex items-center justify-center text-red-400 text-sm">{thread.error}</div>
             ) : (
               <>
-                <div className="flex items-center gap-3 p-3 border-b border-white/5">
-                  <button onClick={() => setActive(null)} className="md:hidden text-white/60 shrink-0"><ArrowLeft className="w-6 h-6" /></button>
+                <div className="flex items-center gap-3 p-3 border-b border-white/5" style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}>
+                  {/* Instagram-style circular back button (mobile full-screen chat) */}
+                  <button onClick={() => setActive(null)} className="md:hidden w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 active:scale-90 transition-transform"><ArrowLeft className="w-5 h-5" /></button>
                   <button onClick={() => thread.isGroup && openMembers()} className={`flex items-center gap-3 flex-1 min-w-0 text-left ${thread.isGroup ? "hover:opacity-80" : "cursor-default"}`}>
                     <div className="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center shrink-0 ring-2 ring-brand-500/20">
                       {thread.isGroup ? <Users className="w-5 h-5 text-brand-400" /> : (thread.other?.avatarUrl ? <img src={thread.other.avatarUrl} className="w-full h-full rounded-full object-cover" alt="" /> : <span className="text-brand-400 font-bold">{thread.other?.firstName?.[0]}</span>)}
@@ -286,9 +287,9 @@ function MessagesInner() {
                       <div className="text-xs text-white/40 truncate">{thread.isGroup ? `${thread.other?.memberCount || 0} members · tap to manage` : (thread.other?.role === "ORGANIZER" ? "Business" : "Active now")}</div>
                     </div>
                   </button>
-                  {/* Call / video (placeholder actions) */}
-                  <button onClick={() => alert('Voice calls are coming soon!')} className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors shrink-0"><Phone className="w-5 h-5" /></button>
-                  <button onClick={() => alert('Video calls are coming soon!')} className="w-9 h-9 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors shrink-0"><Video className="w-5 h-5" /></button>
+                  {/* Call / video — circular like Instagram (placeholder actions) */}
+                  <button onClick={() => alert('Voice calls are coming soon!')} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0"><Phone className="w-[18px] h-[18px]" /></button>
+                  <button onClick={() => alert('Video calls are coming soon!')} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white hover:bg-white/20 transition-colors shrink-0"><Video className="w-[18px] h-[18px]" /></button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 space-y-1.5" style={{ backgroundImage: "radial-gradient(circle at 25% 15%, rgba(34,197,94,0.04), transparent 40%)" }}>
                   {thread.messages.map((m: any) => {
