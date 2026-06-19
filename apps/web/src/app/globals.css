@@ -60,3 +60,7 @@ html.light .text-brand-400 { color: #16a34a !important; }
 
 /* Image-overlay content always keeps its own (white) colours */
 html.light .on-image, html.light .on-image * { color: #ffffff; }
+
+/* When a chat is open on mobile, hide the global bottom tab bar so the chat
+   is truly full-screen (the JS toggles body.chat-open). */
+body.chat-open nav.fixed.bottom-0 { display: none !important; }

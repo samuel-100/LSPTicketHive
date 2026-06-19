@@ -59,14 +59,24 @@ function MessagesInner() {
       if (vv) { vv.removeEventListener("resize", onResize); vv.removeEventListener("scroll", onResize); }
     };
   }, []);
-  // Lock background scroll while a chat is open on mobile (prevents the page
-  // behind the fixed chat from scrolling under the keyboard).
+  // While a chat is open on mobile: lock background scroll AND hide the global
+  // bottom tab bar (via a body class) so the chat is truly full-screen.
   useEffect(() => {
     if (active && isMobile) {
       document.body.style.overflow = "hidden";
-      return () => { document.body.style.overflow = ""; };
+      document.body.classList.add("chat-open");
+      return () => { document.body.style.overflow = ""; document.body.classList.remove("chat-open"); };
     }
   }, [active, isMobile]);
+
+  // Make the phone's back gesture / browser back close the chat (return to the
+  // inbox) instead of leaving the Messages page. We push a history entry when a
+  // chat opens and listen for popstate to close it.
+  useEffect(() => {
+    function onPop() { setActive(null); setThread(null); }
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   async function openMembers() {
     if (!active) return;
@@ -189,10 +199,17 @@ function MessagesInner() {
   }
 
   function openConvo(id: string) {
+    // Push a history entry so the phone's back button closes the chat first.
+    if (typeof window !== "undefined") window.history.pushState({ chat: id }, "");
     setActive(id);
     setThread(null);
     const t = localStorage.getItem("token") || token;
     if (t) loadThread(id, t);
+  }
+  // Close the open chat — go back in history so state stays consistent.
+  function closeConvo() {
+    if (typeof window !== "undefined" && window.history.state?.chat) window.history.back();
+    else { setActive(null); setThread(null); }
   }
   async function send(imageUrl?: string) {
     if ((!body.trim() && !imageUrl) || !active) return;
@@ -277,7 +294,7 @@ function MessagesInner() {
               <>
                 <div className="flex items-center gap-3 p-3 border-b border-white/5" style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}>
                   {/* Instagram-style circular back button (mobile full-screen chat) */}
-                  <button onClick={() => setActive(null)} className="md:hidden w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 active:scale-90 transition-transform"><ArrowLeft className="w-5 h-5" /></button>
+                  <button onClick={closeConvo} className="md:hidden w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white shrink-0 active:scale-90 transition-transform"><ArrowLeft className="w-5 h-5" /></button>
                   <button onClick={() => thread.isGroup && openMembers()} className={`flex items-center gap-3 flex-1 min-w-0 text-left ${thread.isGroup ? "hover:opacity-80" : "cursor-default"}`}>
                     <div className="w-10 h-10 rounded-full bg-brand-500/10 flex items-center justify-center shrink-0 ring-2 ring-brand-500/20">
                       {thread.isGroup ? <Users className="w-5 h-5 text-brand-400" /> : (thread.other?.avatarUrl ? <img src={thread.other.avatarUrl} className="w-full h-full rounded-full object-cover" alt="" /> : <span className="text-brand-400 font-bold">{thread.other?.firstName?.[0]}</span>)}
