@@ -35,6 +35,7 @@ function EventsContent() {
   const [dateFilter, setDateFilter] = useState("");
   const [priceFilter, setPriceFilter] = useState("");
   const [sort, setSort] = useState(searchParams.get("sort") || "date");
+  const [when, setWhen] = useState(searchParams.get("when") || "upcoming");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,11 +46,11 @@ function EventsContent() {
     fetchEvents(urlSearch, urlCity, "");
   }, [searchParams]);
 
-  // Refetch when the sort option changes.
+  // Refetch when sort or time-window changes.
   useEffect(() => {
     fetchEvents(search, city, category);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sort]);
+  }, [sort, when]);
 
   async function fetchEvents(query?: string, filterCity?: string, filterCat?: string) {
     setLoading(true);
@@ -59,6 +60,7 @@ function EventsContent() {
       if (filterCity || city) params.set("city", filterCity || city);
       if (filterCat || category) params.set("category", filterCat || category);
       if (sort && sort !== "date") params.set("sort", sort);
+      if (when) params.set("when", when);
       const res = await fetch(`${API_URL}/api/events?${params}`, { credentials: "include" });
       const data = await res.json();
       setEvents(data.data?.items || []);
@@ -134,7 +136,7 @@ function EventsContent() {
     <div className="min-h-screen bg-[#0a0a0a]">
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
-        <div className="mb-6 flex items-end justify-between gap-4">
+        <div className="mb-4 flex items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white">
               {city ? `Events in ${city}` : "All Events"}
@@ -150,6 +152,19 @@ function EventsContent() {
             <option value="popular">Trending</option>
             <option value="new">Newest</option>
           </select>
+        </div>
+
+        {/* Upcoming / Past toggle */}
+        <div className="inline-flex bg-white/5 border border-white/10 rounded-xl p-1 mb-6">
+          {[["upcoming", "Upcoming"], ["past", "Past"], ["all", "All"]].map(([val, label]) => (
+            <button
+              key={val}
+              onClick={() => setWhen(val)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${when === val ? "bg-brand-500 text-black" : "text-white/50 hover:text-white"}`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">

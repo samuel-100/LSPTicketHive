@@ -38,17 +38,21 @@ const createEventSchema = z.object({
 
 // Public: list published events
 eventsRouter.get("/", async (req, res) => {
-  const { page = "1", limit = "20", category, city, search, sort } = req.query;
+  const { page = "1", limit = "20", category, city, search, sort, when = "upcoming" } = req.query;
   const pageNum = Math.max(1, parseInt(page as string));
   const pageSize = Math.min(50, parseInt(limit as string));
 
-  const where: any = { status: "PUBLISHED", startDate: { gte: new Date() } };
+  const now = new Date();
+  const where: any = { status: "PUBLISHED" };
+  // Time window: upcoming (default), past, or all.
+  if (when === "past") where.startDate = { lt: now };
+  else if (when !== "all") where.startDate = { gte: now };
   if (category) where.category = category;
   if (city) where.city = { contains: city as string, mode: "insensitive" };
   if (search) where.title = { contains: search as string, mode: "insensitive" };
 
-  // Sort options: date (default), soon, new. "popular" handled below.
-  let orderBy: any = { startDate: "asc" };
+  // Sort: upcoming → soonest first; past → most recent first.
+  let orderBy: any = when === "past" ? { startDate: "desc" } : { startDate: "asc" };
   if (sort === "new") orderBy = { createdAt: "desc" };
 
   const [items, total] = await Promise.all([
